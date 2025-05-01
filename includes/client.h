@@ -1,13 +1,9 @@
 #ifndef CLIENT_H
 # define CLIENT_H
 
-#include <uuid/uuid.h>
-
-typedef struct s_client
-{
-    char	uuid[37];
-    int		socket;
-} t_client;
+// Client handler
+char    *read_input(int *client_socket, ssize_t	*valread);
+void    *handle_client(void *arg);
 
 void	client_send(int fd, char *format, ...);
 
