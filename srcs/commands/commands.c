@@ -1,14 +1,32 @@
 #include "commands.h"
 #include "common.h"
 #include "kv_table.h"
+#include "client.h"
 
 static t_kv_table	*command_table = NULL;
+static t_command	*pending_commands[MAX_COMMANDS];
+static int			pending_count = 0;
+
+int queue_command(t_command *cmd) {
+    if (pending_count >= MAX_COMMANDS) 
+		return (1);
+    pending_commands[pending_count++] = cmd;
+    return (0);
+}
 
 int	command_sys_init(void)
 {
+	int	i;
+
 	kv_init_table(&command_table, 32);
 	if (!command_table)
 		return (1);
+	i = 0;
+	while (i < pending_count)
+	{
+		command_register(pending_commands[i]);
+		i++;
+	}
 	return (0);
 }
 
@@ -41,27 +59,22 @@ t_command	*command_find(const char *name)
 	return ((t_command *)command);
 }
 
-void    command_exec(int socket, t_kv_table *table, int argc, char **argv)
-{
-    t_status_code   status;
-    char            *output;
+void    command_exec(int socket, int argc, char **argv)
+{ 
+	t_command	*command = NULL;
 
-    if (strcmp(argv[0], "get") == 0 && argc == 2)
-    {
-        status = kv_get(table, argv[1], (void *)&output, STRING);
-        if (status == SUCCESS_CODE)
-			client_send(socket, output);
-        return ;
-    }        
-}
-
-void    handle_client_input(int socket, t_kv_table *table, char *input)
-{   
-    int     argc;
-    char    **argv;
-
-    parse_input(input, &argc, &argv);
-    if (!argc)
-        return ;
-	command_exec(socket, table, argc, argv);
+	if (argc < 1 || !argv || !argv[0])
+		return ;
+	command = command_find(argv[0]);
+	if (!command)
+	{
+		client_send(socket, "(error) unknown command");
+		return ;
+	}
+	if ((argc - 1) != command->arg_count)
+	{
+		client_send(socket, "(usage) %s", command->usage);
+		return ;
+	}
+	command->handler(socket, argc, argv);
 }

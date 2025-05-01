@@ -1,25 +1,14 @@
-#include <netinet/in.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <sys/socket.h>
-#include <unistd.h>
-#include <pthread.h>
-#include <time.h>
-#include <signal.h>
-#include <errno.h>
-
+#include "common.h"
+#include "globals.h"
 #include "commands.h"
 #include "kv_table.h"
+#include "g_table.h"
 
-#define PORT 8080
-#define DEFAULT_BUFFER_SIZE 1024
-
-volatile sig_atomic_t should_exit = 0;
-pthread_t *thread_ids = NULL;
-int max_threads = 0;
-int num_threads = 0;
-pthread_mutex_t thread_mutex = PTHREAD_MUTEX_INITIALIZER;
+volatile sig_atomic_t	should_exit = 0;
+pthread_t				*thread_ids = NULL;
+int						max_threads = 0;
+int						num_threads = 0;
+pthread_mutex_t 		thread_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 void handle_sigint(int sig)
 {
@@ -106,13 +95,8 @@ void    *handle_client(void *arg)
 	ssize_t		valread;
 	pthread_t 	tid;
 
-	t_kv_table  *t_table;
-
-	t_table = NULL;
-
-    kv_init_table(&t_table, 8);
-	kv_load_file(t_table, "./data/bonjour.kvdb");
-
+	if (init_global_table() != 0)
+		return ;
 	tid = pthread_self();
 	client_socket = *(int *)arg;
 	free(arg);
@@ -121,20 +105,15 @@ void    *handle_client(void *arg)
 	{
 		buffer = read_input(&client_socket, &valread);
 		if (!buffer)
-			break;
+			break ;
         buffer[strcspn(buffer, "\r\n")] = '\0';
-		printf("Received %s\n", buffer);
         if (strcmp(buffer, "quit") == 0)
         {
-            send(client_socket, "Goodbye!\n", strlen("Goodbye!\n"), 0);
+            send(client_socket, "OK\n", strlen("OK\n"), 0);
 			free(buffer);
-            break;
+            break ;
         }
-        handle_client_input(client_socket, t_table, buffer);
-        // else
-        // {
-        //     send(client_socket, "Unknown command\n", strlen("Unknown command\n"), 0);
-        // }
+        handle_client_input(client_socket, buffer);
 		free(buffer);
 	}
 	close(client_socket);
@@ -153,18 +132,31 @@ void    *handle_client(void *arg)
 		}
 		i++;
 	}
+	kv_free_table(g_table);
 	pthread_mutex_unlock(&thread_mutex);
 	pthread_exit(NULL);
+}
+
+void	resize_threads()
+{
+	pthread_t	*temp;
+
+	realloc(thread_ids, sizeof(pthread_t) * max_threads * 2);
+	if (temp)
+	{
+		thread_ids = temp;
+		max_threads *= 2;
+	}
 }
 
 int main(void)
 {
     int 				server_fd;
     int 				*new_socket;
-    struct sockaddr_in	address;
     int 				opt;
+    struct sockaddr_in	address;
     socklen_t			addrlen;
-	struct sigaction		sa;
+	struct sigaction	sa;
 
 	max_threads = 10;
 	thread_ids = malloc(sizeof(pthread_t) * max_threads);
@@ -222,7 +214,7 @@ int main(void)
 	{
 		close(server_fd);
 		cleanup_ressources();
-		return 0;
+		return (0);
 	}
     while (!should_exit)
     {
@@ -255,14 +247,7 @@ int main(void)
         }
 		pthread_mutex_lock(&thread_mutex);
 		if (num_threads >= max_threads)
-		{
-			pthread_t *temp = realloc(thread_ids, sizeof(pthread_t) * max_threads * 2);
-			if (temp)
-			{
-				thread_ids = temp;
-				max_threads *= 2;
-			}
-		}
+			resize_threads();
 		if (num_threads < max_threads) {
 			thread_ids[num_threads++] = tid;
 		}
@@ -272,5 +257,5 @@ int main(void)
     close(server_fd);
 	cleanup_ressources();
 	command_sys_cleanup();
-    return 0;
+    return (0);
 }

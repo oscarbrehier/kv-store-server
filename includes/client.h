@@ -9,6 +9,6 @@ typedef struct s_client
     int		socket;
 } t_client;
 
-void	client_send(int fd, char *buffer);
+void	client_send(int fd, char *format, ...);
 
 #endif
