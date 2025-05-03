@@ -4,30 +4,35 @@
 #define MAX_COMMANDS 64
 
 typedef struct  s_kv_table t_kv_table;
-typedef void	(*cmd_handler)(int, int, char **);
+typedef int		(*cmd_handler)(int, int, char **);
+
+#define T_READ 1
+#define T_WRITE 2
 
 typedef struct s_command
 {
 	const char  *name;
     const char  *usage;
     const char  *description;
+	int			type;
 	int			arg_count;
     cmd_handler handler;
 } t_command;
 
-int queue_command(t_command *cmd);
+int command_queue(t_command *cmd);
 
-#define DEFINE_COMMAND(handler_fn, name_str, usage_str, desc_str, arg_count_int) \
+#define DEFINE_COMMAND(handler_fn, name_str, usage_str, desc_str, arg_count_int, type_int) \
 	static t_command name_str##_cmd = { \
 		.name = #name_str, \
 		.usage = usage_str, \
 		.description = desc_str, \
 		.handler = handler_fn, \
-		.arg_count = arg_count_int \
+		.arg_count = arg_count_int, \
+		.type = type_int, \
 	}; \
 	__attribute__((constructor)) \
 	static void register_##name_str##_command(void) { \
-		queue_command(&name_str##_cmd); \
+		command_queue(&name_str##_cmd); \
 	}
 
 int	        command_sys_init(void);

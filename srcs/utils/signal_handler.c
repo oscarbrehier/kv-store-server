@@ -15,8 +15,8 @@ int	setup_signal_handlers(void)
 	struct sigaction	sa;
 
 	sa.sa_handler = handle_sigint;
-	sa.sa_flags = 0;
 	sigemptyset(&sa.sa_mask);
+	sa.sa_flags = 0;
 	if (sigaction(SIGINT, &sa, NULL) == -1)
 	{
 		perror("sigaction");

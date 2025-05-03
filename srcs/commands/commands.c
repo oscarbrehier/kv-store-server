@@ -2,12 +2,13 @@
 #include "common.h"
 #include "kv_table.h"
 #include "client.h"
+#include "g_table.h"
 
 static t_kv_table	*command_table = NULL;
 static t_command	*pending_commands[MAX_COMMANDS];
 static int			pending_count = 0;
 
-int queue_command(t_command *cmd) {
+int command_queue(t_command *cmd) {
     if (pending_count >= MAX_COMMANDS) 
 		return (1);
     pending_commands[pending_count++] = cmd;
@@ -61,8 +62,10 @@ t_command	*command_find(const char *name)
 
 void    command_exec(int socket, int argc, char **argv)
 { 
-	t_command	*command = NULL;
+	t_command	*command;
+	int			status;
 
+	command = NULL;
 	if (argc < 1 || !argv || !argv[0])
 		return ;
 	command = command_find(argv[0]);
@@ -76,5 +79,7 @@ void    command_exec(int socket, int argc, char **argv)
 		client_send(socket, "(usage) %s", command->usage);
 		return ;
 	}
-	command->handler(socket, argc, argv);
+	status = command->handler(socket, argc, argv);
+	if (status == 0 && command->type == T_WRITE)
+		is_dirty = 1;
 }

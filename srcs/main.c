@@ -35,7 +35,7 @@ int main(void)
 		if (result == 1)
 			break ;
 	}
-	wait_for_threads();
+	// wait_for_threads();
 	close(server_fd);
 	cleanup_ressources();
 	return (0);

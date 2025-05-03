@@ -15,5 +15,9 @@ extern int						max_threads;
 extern int						num_threads;
 extern pthread_mutex_t 		    thread_mutex;
 
+extern int						*client_sockets;
+extern int						client_socket_count;
+extern pthread_mutex_t			client_sockets_mutex;
+
 
 #endif

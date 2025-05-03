@@ -7,6 +7,10 @@ int						max_threads = 0;
 int						num_threads = 0;
 pthread_mutex_t 		thread_mutex = PTHREAD_MUTEX_INITIALIZER;
 
+int						*client_sockets = NULL;
+int						client_socket_count = 0;
+pthread_mutex_t			client_sockets_mutex = PTHREAD_MUTEX_INITIALIZER;
+
 int	initialize_thread_resources(void)
 {
 	max_threads = 10;
@@ -89,9 +93,13 @@ void	wait_for_threads(void)
 		i = 0;
 		while (i < num_threads)
 		{
-			pthread_cancel(thread_ids[i]);
+			// pthread_cancel(thread_ids[i]);
+			pthread_join(thread_ids[i], NULL);
 			i++;
 		}
+		free(thread_ids);
+		thread_ids = NULL;
+		num_threads = 0;
 		pthread_mutex_unlock(&thread_mutex);
 		pthread_cancel(autosave_thread);
 		pthread_join(autosave_thread, NULL);

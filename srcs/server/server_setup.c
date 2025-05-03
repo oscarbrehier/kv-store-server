@@ -107,6 +107,6 @@ int	handle_new_connection(int server_fd, struct sockaddr_in *address)
 	{
 		fprintf(stderr, "Warning: Failed to add thread to tracking array\n");
 	}
-	pthread_detach(tid);
+	// pthread_detach(tid);
 	return (0);
 }
