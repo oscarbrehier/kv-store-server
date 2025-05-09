@@ -4,20 +4,20 @@
 #include <signal.h>
 #include <pthread.h>
 
-#define PORT 8080
-#define DEFAULT_BUFFER_SIZE 1024
 #define MAX_AUTOSAVE_RETRY 1
+#define MAX_EVENTS 64
+#define MAX_BUFFER_SIZE 4096
+#define DEFAULT_THREAD_COUNT 4
+#define MAX_QUEUE_SIZE 1024
 
-extern volatile sig_atomic_t	should_exit;
-extern pthread_t				*thread_ids;
-extern pthread_t				autosave_thread;
-extern int						max_threads;
-extern int						num_threads;
-extern pthread_mutex_t 		    thread_mutex;
+#define DEFAULT_PORT 8080
+#define DEFAULT_BACKLOG 10
+#define DEFAULT_MAX_CLIENTS 100
+#define DEFAULT_THREAD_POOL_SIZE 4
 
-extern int						*client_sockets;
-extern int						client_socket_count;
-extern pthread_mutex_t			client_sockets_mutex;
+typedef struct s_server_config t_server_config;
 
+extern volatile int running;
+extern t_server_config	*config;
 
 #endif

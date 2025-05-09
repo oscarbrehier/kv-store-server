@@ -1,125 +1,78 @@
 #include "common.h"
 #include "globals.h"
-#include "g_table.h"
-#include "client.h"
-#include "commands.h"
-#include "threads/thread_manager.h"
+#include "thread_pool.h"
+#include "server.h"
+#include "utils/dyanmic_buffer.h"
 
-char *read_input(int *client_socket, ssize_t *valread)
+void	*client_handler(void *arg)
 {
-    int				poll_result;
-    char			*buffer;
-    char			*temp_buffer;
-    size_t			total_read;
-    size_t			buffer_size;
-    struct pollfd	pfd;
+	t_thread_pool		*pool;
+	int					client_socket;
+	t_dynamic_buffer	*recv_buffer;
+	t_dynamic_buffer	*send_buffer;
+	int					i;
 
-    buffer_size = DEFAULT_BUFFER_SIZE;
-    total_read = 0;
-    buffer = malloc(sizeof(char) * buffer_size);
-    if (!buffer)
-    {
-        perror("malloc");
-        close(*client_socket);
-        pthread_exit(NULL);
-    }
-
-    pfd.fd = *client_socket;
-    pfd.events = POLLIN;
-
-    while (1)
-    {
-        poll_result = poll(&pfd, 1, 100);
-        if (poll_result < 0)
-        {
-            if (errno == EINTR && should_exit)
-            {
-                goto cleanup;
-            }
-            perror("poll");
-            goto cleanup;
-        }
-        else if (poll_result == 0)
-        {
-            if (should_exit)
-                goto cleanup;
-            continue;
-        }
-
-        if (pfd.revents & POLLIN)
-        {
-            *valread = read(*client_socket, buffer + total_read, buffer_size - total_read - 1);
-            if (*valread < 0)
-            {
-                perror("read");
-                goto cleanup;
-            }
-            else if (*valread == 0)
-            {
-                goto cleanup;
-            }
-            total_read += *valread;
-            if (total_read == buffer_size - 1)
-            {
-                buffer_size *= 2;
-                temp_buffer = realloc(buffer, sizeof(char) * buffer_size);
-                if (!temp_buffer)
-                {
-                    perror("realloc");
-                    goto cleanup;
-                }
-                buffer = temp_buffer;
-            }
-            else
-            {
-                break;
-            }
-        }
-    }
-    buffer[total_read] = '\0';
-    return buffer;
-
-cleanup:
-    if (buffer)
-		free(buffer);
-    close(*client_socket);
-    pthread_exit(NULL);
-	return (NULL);
-}
-
-void    *handle_client(void *arg)
-{
-    int			client_socket;
-	char		*buffer;
-	ssize_t		valread;
-	pthread_t 	tid;
-
-	tid = pthread_self();
-	client_socket = *(int *)arg;
-	free(arg);
-	printf("Client connected (threaded).\n");
-	while (!should_exit)
+	pool = (t_thread_pool *)arg;
+	recv_buffer = dynamic_buffer_create(4096);
+	send_buffer = dynamic_buffer_create(4096);
+	if (!recv_buffer || !send_buffer)
 	{
-		buffer = read_input(&client_socket, &valread);
-		if (!buffer)
-			break ;
-        buffer[strcspn(buffer, "\r\n")] = '\0';
-        if (strcmp(buffer, "quit") == 0)
-        {
-            send(client_socket, "OK\n", strlen("OK\n"), 0);
-			free(buffer);
-            break ;
-        }
-        handle_client_input(client_socket, buffer);
-		free(buffer);
-		buffer = NULL;
+		if (recv_buffer) dynamic_buffer_destroy(recv_buffer);
+		if (send_buffer) dynamic_buffer_destroy(send_buffer);
+		fprintf(stderr, "Failed to allocate buffer for client handler\n");
+		return (NULL);
 	}
-    // if (buffer != NULL)
-    // {
-    //     free(buffer);
-    //     buffer = NULL;
-    // }
-	close(client_socket);
-	remove_thread_from_array(tid);
-	pthread_exit(NULL);
+	while (!pool->shutdown)
+	{
+		pthread_mutex_lock(&pool->lock);
+		while (pool->client_count == 0 && !pool->shutdown)
+		{
+			pthread_cond_wait(&pool->condition, &pool->lock);
+		}
+		if (pool->shutdown)
+		{
+			pthread_mutex_unlock(&pool->lock);
+			break ;
+		}
+		client_socket = pool->client_sockets[0];
+		i = 0;
+		while (i < pool->client_count - 1)
+		{
+			pool->client_sockets[i] = pool->client_sockets[i + 1];
+			i++;
+		}
+		pool->client_count--;
+		pthread_mutex_unlock(&pool->lock);
+		if (client_socket > 0)
+		{
+			char	recv_chunk[1024];
+			ssize_t	bytes_read;
+			int		client_active;
+			
+			client_active = 1;
+			while (client_active && running)
+			{
+				dynamic_buffer_reset(recv_buffer);
+				dynamic_buffer_reset(send_buffer);
+				while ((bytes_read = recv(client_socket, recv_chunk, sizeof(recv_chunk) - 1, 0)) > 0)
+				{
+					recv_chunk[bytes_read] = '\0';
+					dynamic_buffer_append(recv_buffer, recv_chunk, bytes_read);
+					if (strchr(recv_chunk, '\n') != NULL)
+						break ;
+				}
+				if (bytes_read <= 0)
+				{
+					client_active = 0;
+					continue ;
+				}
+				// HANDLE COMMANDS
+			}
+		}
+		send(client_socket, "Goodbye!\n", strlen("Goodbye!\n"), 0);
+		close(client_socket);
+	}
+	dynamic_buffer_destroy(recv_buffer);
+	dynamic_buffer_destroy(send_buffer);
+	return (NULL);
 }

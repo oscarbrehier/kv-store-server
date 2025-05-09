@@ -1,42 +1,25 @@
 #include "common.h"
 #include "globals.h"
-#include "server/server_setup.h"
-#include "utils/cleanup.h"
-#include "utils/signal_handler.h"
-#include "threads/thread_manager.h"
+#include "server.h"
+#include "kv_table.h"
 
-int main(void)
+volatile int running = 1;
+t_server_config	*config = NULL;
+
+int	main(void)
 {
-    int					server_fd;
-	int					result;
-	struct sockaddr_in	address;
-
-	if (initialize_thread_resources() != 0)
-		return (1);
-	if (setup_signal_handlers() != 0)
+	config = server_config_create(DEFAULT_PORT, DEFAULT_BACKLOG, DEFAULT_MAX_CLIENTS, DEFAULT_THREAD_POOL_SIZE);
+	if (!config)
 	{
-		free(thread_ids);
+		fprintf(stderr, "Failed to create server configuration\n");
 		return (1);
 	}
-	if (setup_server_socket(&server_fd, &address) != 0)
+	if (server_start(config) != 0)
 	{
-		free(thread_ids);
+		fprintf(stderr, "Server failed to start\n");
+		server_config_destroy(config);
 		return (1);
 	}
-	if (initialize_subsystems() != 0)
-	{
-		close(server_fd);
-		free(thread_ids);
-		return (1);
-	}
-	while (!should_exit)
-	{
-		result = handle_new_connection(server_fd, &address);
-		if (result == 1)
-			break ;
-	}
-	// wait_for_threads();
-	close(server_fd);
-	cleanup_ressources();
-	return (0);
+	server_config_destroy(config);
+	return (1);
 }
