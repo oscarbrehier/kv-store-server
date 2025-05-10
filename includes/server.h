@@ -13,7 +13,6 @@ typedef struct s_server_config
 	int				server_socket;
 	int				running;
 	t_thread_pool	*thread_pool;
-	t_kv_table		*table;
 } t_server_config;
 
 t_server_config	*server_config_create(int port, int backlog, int max_clients, int thread_pool_size);

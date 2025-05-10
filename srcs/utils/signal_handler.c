@@ -1,13 +1,19 @@
 #include "globals.h"
 #include "common.h"
-#include "server.h"
 
 void	handle_signal(int sig)
 {
-	printf("received signal %d, shutting down...", sig);
-	if (config != NULL)
-	{
-		server_stop(config);
-	}
+	printf("received signal %d, shutting down...\n", sig);
 	running = 0;
+}
+
+void	setup_signal(void)
+{
+	struct sigaction	sa;
+	
+	sa.sa_handler = handle_signal;
+	sigemptyset(&sa.sa_mask);
+	sa.sa_flags = 0;
+	sigaction(SIGINT, &sa, NULL);
+	sigaction(SIGTERM, &sa, NULL);
 }

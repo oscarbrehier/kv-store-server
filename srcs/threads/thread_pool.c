@@ -3,18 +3,18 @@
 #include "thread_pool.h"
 #include "client.h"
 
-t_thread_pool	*thread_pool_create(int size, t_kv_table *table)
+t_thread_pool	*thread_pool_create(int size)
 {
 	t_thread_pool	*pool;
 	int				i;
 
-	if (size <= 0 || !table)
+	if (size <= 0)
 		return (NULL);
 	pool = malloc(sizeof(t_thread_pool));
 	if (!pool)
 		return (NULL);
 	pool->threads = malloc(sizeof(t_thread) * size);
-	pool->client_sockets = malloc(sizeof(int) * size);
+	pool->client_sockets = malloc(sizeof(int) * size * 2);
 	if (!pool->threads || !pool->client_sockets)
 	{
 		if (pool->threads) free(pool->threads);
@@ -26,7 +26,6 @@ t_thread_pool	*thread_pool_create(int size, t_kv_table *table)
 	pool->max_size = size;
 	pool->shutdown = 0;
 	pool->client_count = 0;
-	pool->table = table;
 	pthread_mutex_init(&pool->lock, NULL);
 	pthread_cond_init(&pool->condition, NULL);
 	i = 0;

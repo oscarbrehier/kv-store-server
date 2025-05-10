@@ -5,11 +5,11 @@
 #include "signal_handler.h"
 #include "thread_pool.h"
 #include "server.h"
+#include "g_table.h"
+#include "commands.h"
 
 t_server_config	*server_config_create(int port, int backlog, int max_clients, int thread_pool_size)
 {
-	t_kv_table		*table;
-
 	config = malloc(sizeof(t_server_config));
 	if (!config)
 		return (NULL);
@@ -19,22 +19,21 @@ t_server_config	*server_config_create(int port, int backlog, int max_clients, in
 	config->server_socket = -1;
 	config->running = 0;
 
-	if (kv_init_table(&table, 8) != SUCCESS_CODE)
-	{
-		return (NULL);
-	}
+	// INIT TABLE
+	
+	// if (init_global_table() != 0)
+	// 	return (NULL);
 
-	config->table = table; // INIT OR CREATE TABLE HERE;
+	// config->table = g_table; // INIT OR CREATE TABLE HERE;
 
-	if (!config->table)
-	{
-		free(config);
-		return (NULL);
-	}
-	config->thread_pool = thread_pool_create(thread_pool_size, config->table);
+	// if (!config->table)
+	// {
+	// 	free(config);
+	// 	return (NULL);
+	// }
+	config->thread_pool = thread_pool_create(thread_pool_size);
 	if (!config->thread_pool)
 	{
-		kv_free_table(table);
 		free(config);
 		return (NULL);
 	}
@@ -49,8 +48,6 @@ void	server_config_destroy(t_server_config *config)
 		close(config->server_socket);
 	if (config->thread_pool)
 		thread_pool_destroy(config->thread_pool);
-	if (config->table)
-		kv_free_table(config->table);
 	free(config);
 }
 
@@ -62,8 +59,9 @@ int	server_start(t_server_config *config)
 	// Check that there is a config and that server is not already running
 	if (!config || config->running)
 		return (-1);
-	signal(SIGINT, handle_signal);
-	signal(SIGTERM, handle_signal);
+	setup_signal();
+	// signal(SIGINT, handle_signal);
+	// signal(SIGTERM, handle_signal);
 	config->server_socket = socket(AF_INET, SOCK_STREAM, 0);
 	if (config->server_socket < 0)
 	{
@@ -96,6 +94,13 @@ int	server_start(t_server_config *config)
 		config->server_socket = -1;
 		return (-1);
 	}
+	if (command_sys_init() != 0)
+	{
+		perror("command registration failed");
+		close(config->server_socket);
+		config->server_socket = -1;
+		return (-1);
+	}
 	printf("(server) listening on port %d\n", config->port);
 	config->running = 1;
 	running = 1;
@@ -117,7 +122,9 @@ int	server_start(t_server_config *config)
 		printf("new connection %s:%d\n", inet_ntoa(client_addr.sin_addr), ntohs(client_addr.sin_port));
 		thread_pool_add_client(config->thread_pool, client_socket);
 	}
+	printf("closing serverr\n");
 	config->running = 0;
+	command_sys_cleanup();
 	close(config->server_socket);
 	config->server_socket = -1;
 	return (0);

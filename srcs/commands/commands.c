@@ -3,6 +3,8 @@
 #include "kv_table.h"
 #include "client.h"
 #include "g_table.h"
+#include "utils/dyanmic_buffer.h"
+#include "globals.h"
 
 static t_kv_table	*command_table = NULL;
 static t_command	*pending_commands[MAX_COMMANDS];
@@ -60,7 +62,7 @@ t_command	*command_find(const char *name)
 	return ((t_command *)command);
 }
 
-void    command_exec(int socket, int argc, char **argv)
+void    command_exec(t_dynamic_buffer **buffer, int argc, char **argv)
 { 
 	t_command	*command;
 	int			status;
@@ -69,17 +71,22 @@ void    command_exec(int socket, int argc, char **argv)
 	if (argc < 1 || !argv || !argv[0])
 		return ;
 	command = command_find(argv[0]);
+	if (!running)
+		return;
 	if (!command)
 	{
-		client_send(socket, "(error) unknown command");
+		dynamic_buffer_append(*buffer, "(error) unknown command", strlen("(error) unknown command"));
 		return ;
 	}
 	if ((argc - 1) != command->arg_count)
 	{
-		client_send(socket, "(usage) %s", command->usage);
+		char res[256];
+		snprintf(res, sizeof(res), "(usage) %s", command->usage);
+		dynamic_buffer_append(*buffer, res, strlen(res));
+		// client_send(socket, "(usage) %s", command->usage);
 		return ;
 	}
-	status = command->handler(socket, argc, argv);
+	status = command->handler(buffer, argc, argv);
 	if (status == 0 && command->type == T_WRITE)
 		is_dirty = 1;
 }
