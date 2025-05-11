@@ -51,17 +51,37 @@ void	server_config_destroy(t_server_config *config)
 	free(config);
 }
 
+void	server_worker(t_server_config *config)
+{
+	struct sockaddr_in	client_addr;
+	socklen_t			client_len;
+	int					client_socket;
+
+	while (running)
+	{
+
+		client_len = sizeof(client_addr);
+		client_socket = accept(config->server_socket, (struct sockaddr *)&client_addr, &client_len);
+		if (client_socket < 0)
+		{
+			if (errno == EINTR && !running)
+				break ;
+			perror("accept failed");
+			continue ;
+		}
+		printf("new connection %s:%d\n", inet_ntoa(client_addr.sin_addr), ntohs(client_addr.sin_port));
+		thread_pool_add_client(config->thread_pool, client_socket);
+	}
+}
+
 int	server_start(t_server_config *config)
 {
 	struct sockaddr_in	server_addr;
 	int					opt;
 
-	// Check that there is a config and that server is not already running
 	if (!config || config->running)
 		return (-1);
 	setup_signal();
-	// signal(SIGINT, handle_signal);
-	// signal(SIGTERM, handle_signal);
 	config->server_socket = socket(AF_INET, SOCK_STREAM, 0);
 	if (config->server_socket < 0)
 	{
@@ -104,25 +124,8 @@ int	server_start(t_server_config *config)
 	printf("(server) listening on port %d\n", config->port);
 	config->running = 1;
 	running = 1;
-	while (running)
-	{
-		struct sockaddr_in	client_addr;
-		socklen_t			client_len;
-		int					client_socket;
-
-		client_len = sizeof(client_addr);
-		client_socket = accept(config->server_socket, (struct sockaddr *)&client_addr, &client_len);
-		if (client_socket < 0)
-		{
-			if (errno == EINTR && !running)
-				break ;
-			perror("accept failed");
-			continue ;
-		}
-		printf("new connection %s:%d\n", inet_ntoa(client_addr.sin_addr), ntohs(client_addr.sin_port));
-		thread_pool_add_client(config->thread_pool, client_socket);
-	}
-	printf("closing serverr\n");
+	server_worker(config);
+	printf("closing server\n");
 	config->running = 0;
 	command_sys_cleanup();
 	close(config->server_socket);

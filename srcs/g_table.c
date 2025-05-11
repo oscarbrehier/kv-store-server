@@ -21,12 +21,12 @@ void    *g_table_autosave(void *arg)
 
     (void)arg;
     retry = 0;
-    while (1)
+    while (running)
     {
         sleep(10);
 		if (is_dirty == 0)
 		{
-			printf("(autosave) no data was modified\n");
+			fprintf(stderr, "(autosave) no data was modified\n");
             fflush(stdout);
 			continue;
 		}
@@ -34,7 +34,7 @@ void    *g_table_autosave(void *arg)
         status = kv_save_file(g_table, "./data/bonjour.kvdb");
         while (status != SUCCESS_CODE && retry < MAX_AUTOSAVE_RETRY)
         {
-            printf("(error) autosave failure. retrying.\n");
+            fprintf(stderr, "(error) autosave failure. retrying.\n");
             fflush(stdout);
             status = kv_save_file(g_table, "./data/bonjour.kvdb");
             retry++;
@@ -42,10 +42,10 @@ void    *g_table_autosave(void *arg)
         if (status == SUCCESS_CODE)
         {
             is_dirty = 0;
-            printf("(autosave) OK\n");
+            fprintf(stderr, "(autosave) OK\n");
         }
         else
-            printf("(autosave) FAILED after %d retries\n", retry);
+            fprintf(stderr, "(autosave) FAILED after %d retries\n", retry);
         fflush(stdout);
     }
     return (NULL);
