@@ -2,14 +2,39 @@
 #include "globals.h"
 #include "thread_pool.h"
 #include "server.h"
-#include "utils/dyanmic_buffer.h"
+#include "utils/dynamic_buffer.h"
 #include "commands.h"
+
+int	handle_input(t_dynamic_buffer *recv_buffer, t_dynamic_buffer *send_buffer, int *client_active)
+{
+	char	*input;
+	char	**argv;
+	int		argc;
+
+	input = strtok(recv_buffer->buffer, "\t\r\n");
+	if (!input)
+	{
+		return (0);
+	}
+	if (strcmp(input, "quit") == 0)
+	{
+		*client_active = 0;
+		return (1);
+	}
+	parse_input(input, &argc, &argv);
+	command_exec(&send_buffer, argc, argv);
+	if (argv)
+	{
+		free_argv(argv);
+	}
+	return (0);
+}
 
 void serve_client(t_dynamic_buffer *recv_buffer, t_dynamic_buffer *send_buffer, int client_socket)
 {
-	char recv_chunk[1024];
-	ssize_t bytes_read;
-	int client_active;
+	char	recv_chunk[1024];
+	ssize_t	bytes_read;
+	int		client_active;
 
 	client_active = 1;
 	while (client_active && running)
@@ -28,26 +53,13 @@ void serve_client(t_dynamic_buffer *recv_buffer, t_dynamic_buffer *send_buffer, 
 			client_active = 0;
 			continue;
 		}
-		// HANDLE COMMANDS
-		char *input = strtok(recv_buffer->buffer, "\t\r\n");
-		int argc;
-		char **argv;
-
-		printf("received %s\n", input);
-		if (strcmp(input, "quit") == 0)
+		if (handle_input(recv_buffer, send_buffer, &client_active) == 1)
 		{
-			client_active = 0;
+			break ;
 		}
-		parse_input(input, &argc, &argv);
-		command_exec(&send_buffer, argc, argv);
-		dynamic_buffer_append(send_buffer, "hello", 5);
 		if (send_buffer->used > 0)
 		{
 			send(client_socket, send_buffer->buffer, send_buffer->used, 0);
-		}
-		if (argv)
-		{
-			free_argv(argv);
 		}
 	}
 }

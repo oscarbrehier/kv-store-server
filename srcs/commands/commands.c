@@ -3,7 +3,7 @@
 #include "kv_table.h"
 #include "client.h"
 #include "g_table.h"
-#include "utils/dyanmic_buffer.h"
+#include "utils/dynamic_buffer.h"
 #include "globals.h"
 
 static t_kv_table	*command_table = NULL;
@@ -75,15 +75,12 @@ void    command_exec(t_dynamic_buffer **buffer, int argc, char **argv)
 		return;
 	if (!command)
 	{
-		dynamic_buffer_append(*buffer, "(error) unknown command", strlen("(error) unknown command"));
+		dynamic_buffer_append(*buffer, "(error) unknown command\n", strlen("(error) unknown command\n"));
 		return ;
 	}
 	if ((argc - 1) != command->arg_count)
 	{
-		char res[256];
-		snprintf(res, sizeof(res), "(usage) %s", command->usage);
-		dynamic_buffer_append(*buffer, res, strlen(res));
-		// client_send(socket, "(usage) %s", command->usage);
+		dynamic_buffer_appendf(buffer, "(usage): %s\n", command->usage);
 		return ;
 	}
 	status = command->handler(buffer, argc, argv);

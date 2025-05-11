@@ -1,4 +1,4 @@
-#include "utils/dyanmic_buffer.h"
+#include "utils/dynamic_buffer.h"
 
 t_dynamic_buffer	*dynamic_buffer_create(size_t size)
 {
@@ -32,7 +32,7 @@ void	dynamic_buffer_append(t_dynamic_buffer *buffer, const char *data, size_t le
 	size_t	new_size;
 	char	*new_buffer;
 
-	if (!buffer || !data || length == 0)
+	if (!buffer || !data)
 		return ;
 	if (buffer->used + length >= buffer->size)
 	{

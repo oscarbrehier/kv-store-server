@@ -2,7 +2,7 @@
 #include "commands.h"
 #include "client.h"
 #include "g_table.h"
-#include "utils/dyanmic_buffer.h"
+#include "utils/dynamic_buffer.h"
 #include "globals.h"
 
 int handle_get(t_dynamic_buffer **buffer, int argc, char **argv)
@@ -19,11 +19,10 @@ int handle_get(t_dynamic_buffer **buffer, int argc, char **argv)
 	status = kv_get(g_table, argv[1], (void *)&output, STRING);
     if (status == SUCCESS_CODE)
 	{
-        // client_send(socket, output);
-        dynamic_buffer_append(*buffer, output, strlen(output));
+        dynamic_buffer_appendf(buffer, "%s\n", output);
         return (0);
     }
-    dynamic_buffer_append(*buffer, "null", strlen("null"));
+    dynamic_buffer_appendf(buffer, "null\n");
     return (-1);
 }
 

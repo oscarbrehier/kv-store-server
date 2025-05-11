@@ -16,6 +16,7 @@ int	resize_argv_if_needed(char ***argv, int *arg_capacity, int arg_count)
 	}
     return (1);
 }
+
 void	free_argv(char **argv)
 {
 	int	i;
