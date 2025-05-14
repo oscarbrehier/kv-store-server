@@ -20,5 +20,6 @@
 #include <sys/types.h>
 #include <sys/epoll.h>
 #include <arpa/inet.h>
+#include <time.h>
 
 #endif

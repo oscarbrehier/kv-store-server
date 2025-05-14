@@ -1,13 +1,14 @@
 #include "globals.h"
 #include "kv_table.h"
+#include "logs.h"
 
 t_kv_table	*g_table = NULL;
 int			is_dirty = 0;
 
 int init_global_table(void)
 {
-    if (kv_init_table(&g_table, 8) != SUCCESS_CODE ||
-        kv_load_file(g_table, "./data/bonjour.kvdb"))
+    if (kv_init_table(&g_table, 8).code != SUCCESS ||
+        kv_load_file(g_table, "./data/bonjour.kvdb").code != SUCCESS)
     {
         return (1);
     }
@@ -16,8 +17,8 @@ int init_global_table(void)
 
 void    *g_table_autosave(void *arg)
 {
-    t_status_code   status;
-    int             retry;
+    t_status	status;
+    int			retry;
 
     (void)arg;
     retry = 0;
@@ -26,26 +27,23 @@ void    *g_table_autosave(void *arg)
         sleep(10);
 		if (is_dirty == 0)
 		{
-			fprintf(stderr, "(autosave) no data was modified\n");
             fflush(stdout);
 			continue;
 		}
         retry = 0;
         status = kv_save_file(g_table, "./data/bonjour.kvdb");
-        while (status != SUCCESS_CODE && retry < MAX_AUTOSAVE_RETRY)
+        while (status.code != SUCCESS && retry < MAX_AUTOSAVE_RETRY)
         {
-            fprintf(stderr, "(error) autosave failure. retrying.\n");
+            alog(LOG_ERROR, NULL, 0, "Autosave failed. Retrying");
             fflush(stdout);
             status = kv_save_file(g_table, "./data/bonjour.kvdb");
             retry++;
         }
-        if (status == SUCCESS_CODE)
+        if (status.code == SUCCESS)
         {
+            alogf(LOG_INFO, NULL, 0, "Autosave trigger (%d change(s) since last save)", is_dirty);
             is_dirty = 0;
-            fprintf(stderr, "(autosave) OK\n");
         }
-        else
-            fprintf(stderr, "(autosave) FAILED after %d retries\n", retry);
         fflush(stdout);
     }
     return (NULL);

@@ -4,42 +4,39 @@
 #include "g_table.h"
 #include "utils/dynamic_buffer.h"
 #include "globals.h"
+#include "status_codes.h"
 
-int handle_get(t_dynamic_buffer **buffer, int argc, char **argv)
+t_status    handle_get(t_dynamic_buffer **buffer, int argc, char **argv)
 {
 	(void)argc;
 	(void)socket;
-	t_status_code   status;
-    char            *output;
+	t_status	status;
+    char		*output;
 
-    if (!running)
-    {
-		return (-1);
-	}
 	status = kv_get(g_table, argv[1], (void *)&output, STRING);
-    if (status == SUCCESS_CODE)
+    if (status.code == SUCCESS)
 	{
         dynamic_buffer_appendf(buffer, "%s\n", output);
-        return (0);
+        return (status);
     }
     dynamic_buffer_appendf(buffer, "null\n");
-    return (-1);
+    return (status);
 }
 
-int handle_set(t_dynamic_buffer **buffer, int argc, char **argv)
+t_status handle_set(t_dynamic_buffer **buffer, int argc, char **argv)
 {
     (void)argc;
     (void)buffer;
-    t_status_code   status;
+    t_status	status;
 
     status = kv_set(g_table, argv[1], (void *)argv[2], strlen(argv[2]), STRING);
-    if (status == SUCCESS_CODE)
+    if (status.code == SUCCESS)
     {
-        // client_send(socket, "OK");
-        return (0);
+        dynamic_buffer_appendf(buffer, "OK\n");
+        return (status);
     }
-    // client_send(socket, "null");
-    return (-1);
+    dynamic_buffer_appendf(buffer, "null\n");
+    return (status);
 }
 
 DEFINE_COMMAND(handle_get, get, "get <key>", "", 1, T_READ);

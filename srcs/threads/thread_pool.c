@@ -2,6 +2,7 @@
 #include "kv_table.h"
 #include "thread_pool.h"
 #include "client.h"
+#include "logs.h"
 
 t_thread_pool	*thread_pool_create(int size)
 {
@@ -14,11 +15,11 @@ t_thread_pool	*thread_pool_create(int size)
 	if (!pool)
 		return (NULL);
 	pool->threads = malloc(sizeof(t_thread) * size);
-	pool->client_sockets = malloc(sizeof(int) * size * 2);
-	if (!pool->threads || !pool->client_sockets)
+	pool->clients = malloc(sizeof(int) * size * 2);
+	if (!pool->threads || !pool->clients)
 	{
 		if (pool->threads) free(pool->threads);
-		if (pool->client_sockets) free(pool->client_sockets);
+		if (pool->clients) free(pool->clients);
 		free(pool);
 		return (NULL);
 	}
@@ -63,31 +64,36 @@ void	thread_pool_destroy(t_thread_pool *pool)
 	i = 0;
 	while (i < pool->client_count)
 	{
-		if (pool->client_sockets[i] > 0)
-			close(pool->client_sockets[i]);
+		if (pool->clients[i].socket > 0)
+			close(pool->clients[i].socket);
 		i++;
 	}
 	pthread_mutex_destroy(&pool->lock);
 	pthread_cond_destroy(&pool->condition);
 	free(pool->threads);
-	free(pool->client_sockets);
+	free(pool->clients);
 	free(pool);
 }
 
-void	thread_pool_add_client(t_thread_pool *pool, int client_socket)
+int	thread_pool_add_client(t_thread_pool *pool, int client_socket, const char *ip, uint16_t port)
 {
+	int	client_pos;
+
 	if (!pool)
-		return ;
+		return (-1);
 	pthread_mutex_lock(&pool->lock);
 	if (pool->client_count < pool->max_size * 2)
 	{
-		pool->client_sockets[pool->client_count++] = client_socket;
+		client_pos = pool->client_count++;
+		pool->clients[client_pos].socket = client_socket;
+		strncpy(pool->clients[client_pos].ip, ip, INET_ADDRSTRLEN);
+		pool->clients[client_pos].port = port;
+		alog(LOG_INFO, pool->clients[client_pos].ip, pool->clients[client_pos].port, "client connected");
 		pthread_cond_signal(&pool->condition);
+		pthread_mutex_unlock(&pool->lock);
+		return (client_pos);
 	}
-	else
-	{
-		// Too many clients, close connection
-		close(client_socket);
-	}
+	close(client_socket);
 	pthread_mutex_unlock(&pool->lock);
+	return (-1);
 }

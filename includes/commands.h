@@ -3,9 +3,11 @@
 
 #define MAX_COMMANDS 64
 
+typedef struct s_status t_status;
 typedef struct s_kv_table t_kv_table;
+typedef struct s_client t_client;
 typedef struct s_dynamic_buffer t_dynamic_buffer;
-typedef int		(*cmd_handler)(t_dynamic_buffer **, int, char **);
+typedef t_status (*cmd_handler)(t_dynamic_buffer **, int, char **);
 
 #define T_READ 1
 #define T_WRITE 2
@@ -40,7 +42,8 @@ int	        command_sys_init(void);
 void	    command_sys_cleanup(void);
 int	        command_register(t_command *cmd);
 t_command	*command_find(const char *name);
-void        command_exec(t_dynamic_buffer **buffer, int argc, char **argv);
+void        command_exec(t_dynamic_buffer **buffer, int argc, char **argv, t_client client);
+void    	command_logger(t_client client, int argc, char **argv, t_status status);
 
 void    handle_client_input(int socket, char *input);
 void    parse_input(char *input, int *argc, char ***argv);

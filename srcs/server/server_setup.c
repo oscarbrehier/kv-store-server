@@ -18,19 +18,6 @@ t_server_config	*server_config_create(int port, int backlog, int max_clients, in
 	config->max_clients = max_clients;
 	config->server_socket = -1;
 	config->running = 0;
-
-	// INIT TABLE
-	
-	// if (init_global_table() != 0)
-	// 	return (NULL);
-
-	// config->table = g_table; // INIT OR CREATE TABLE HERE;
-
-	// if (!config->table)
-	// {
-	// 	free(config);
-	// 	return (NULL);
-	// }
 	config->thread_pool = thread_pool_create(thread_pool_size);
 	if (!config->thread_pool)
 	{
@@ -70,7 +57,7 @@ void	server_worker(t_server_config *config)
 			continue ;
 		}
 		printf("new connection %s:%d\n", inet_ntoa(client_addr.sin_addr), ntohs(client_addr.sin_port));
-		thread_pool_add_client(config->thread_pool, client_socket);
+		thread_pool_add_client(config->thread_pool, client_socket, inet_ntoa(client_addr.sin_addr), ntohs(client_addr.sin_port));
 	}
 }
 

@@ -5,6 +5,9 @@
 #include "g_table.h"
 #include "utils/dynamic_buffer.h"
 #include "globals.h"
+#include "client.h"
+#include "status_codes.h"
+#include "logs.h"
 
 static t_kv_table	*command_table = NULL;
 static t_command	*pending_commands[MAX_COMMANDS];
@@ -46,7 +49,7 @@ int	command_register(t_command *cmd)
 {
 	if (!command_table || !cmd || !cmd->name)
 		return (1);
-	if (kv_set(command_table, cmd->name, cmd, sizeof(t_command), STRING) != SUCCESS_CODE)
+	if (kv_set(command_table, cmd->name, cmd, sizeof(t_command), STRING).code != SUCCESS)
 		return (1);
 	return (0);
 }
@@ -54,18 +57,20 @@ int	command_register(t_command *cmd)
 t_command	*command_find(const char *name)
 {
 	void	*command;
+	t_status	status;
 
 	if (!command_table || !name)
 		return (NULL);
-	if (kv_get(command_table, name, &command, STRING) != SUCCESS_CODE)
+	status = kv_get(command_table, name, &command, STRING);
+	if (status.code != SUCCESS)
 		return (NULL);
 	return ((t_command *)command);
 }
 
-void    command_exec(t_dynamic_buffer **buffer, int argc, char **argv)
+void    command_exec(t_dynamic_buffer **buffer, int argc, char **argv, t_client client)
 { 
 	t_command	*command;
-	int			status;
+	t_status	status;
 
 	command = NULL;
 	if (argc < 1 || !argv || !argv[0])
@@ -84,6 +89,10 @@ void    command_exec(t_dynamic_buffer **buffer, int argc, char **argv)
 		return ;
 	}
 	status = command->handler(buffer, argc, argv);
-	if (status == 0 && command->type == T_WRITE)
-		is_dirty = 1;
+	command_logger(client, argc, argv, status);
+	if (status.code == SUCCESS || status.code == WARNING_KEY_EXISTS)
+	{
+		if (command->type == T_WRITE)
+			is_dirty++;
+	}
 }
