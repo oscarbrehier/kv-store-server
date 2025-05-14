@@ -19,9 +19,9 @@ typedef struct s_thread_pool
 	int				size;
 	int				max_size;
 	int				shutdown;
-	// int				*client_sockets;
 	t_client		*clients;
 	int				client_count;
+	int				active_clients;
 	pthread_mutex_t	lock;
 	pthread_cond_t	condition;
 } t_thread_pool;

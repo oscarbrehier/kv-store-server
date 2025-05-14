@@ -1,3 +1,4 @@
+#define _GNU_SOURCE
 #include "server.h"
 #include "kv_table.h"
 #include "thread_pool.h"
@@ -15,7 +16,7 @@ t_thread_pool	*thread_pool_create(int size)
 	if (!pool)
 		return (NULL);
 	pool->threads = malloc(sizeof(t_thread) * size);
-	pool->clients = malloc(sizeof(int) * size * 2);
+	pool->clients = malloc(sizeof(t_client) * size * 2);
 	if (!pool->threads || !pool->clients)
 	{
 		if (pool->threads) free(pool->threads);
@@ -27,6 +28,7 @@ t_thread_pool	*thread_pool_create(int size)
 	pool->max_size = size;
 	pool->shutdown = 0;
 	pool->client_count = 0;
+	pool->active_clients = 0;
 	pthread_mutex_init(&pool->lock, NULL);
 	pthread_cond_init(&pool->condition, NULL);
 	i = 0;
@@ -46,8 +48,9 @@ t_thread_pool	*thread_pool_create(int size)
 
 void	thread_pool_destroy(t_thread_pool *pool)
 {
-	int	i;
+	int				i;
 
+	printf("destroying threadpool\n");
 	if (!pool)
 		return ;
 	pthread_mutex_lock(&pool->lock);
@@ -55,17 +58,25 @@ void	thread_pool_destroy(t_thread_pool *pool)
 	pthread_cond_broadcast(&pool->condition);
 	pthread_mutex_unlock(&pool->lock);
 	i = 0;
+	printf("joining threads (size %d) \n", pool->size);
 	while (i < pool->size)
 	{
+		printf("processing thread %d\n", i);
 		if (pool->threads[i].is_active)
 			pthread_join(pool->threads[i].thread_id, NULL);
 		i++;
 	}
 	i = 0;
+	printf("closing socket connections\n");
 	while (i < pool->client_count)
 	{
 		if (pool->clients[i].socket > 0)
+		{
+			printf("attempting to close socket %d\n", i);
+			shutdown(pool->clients[i].socket, SHUT_RDWR);
 			close(pool->clients[i].socket);
+			printf("closed socket %d\n", i);
+		}
 		i++;
 	}
 	pthread_mutex_destroy(&pool->lock);
@@ -88,7 +99,7 @@ int	thread_pool_add_client(t_thread_pool *pool, int client_socket, const char *i
 		pool->clients[client_pos].socket = client_socket;
 		strncpy(pool->clients[client_pos].ip, ip, INET_ADDRSTRLEN);
 		pool->clients[client_pos].port = port;
-		alog(LOG_INFO, pool->clients[client_pos].ip, pool->clients[client_pos].port, "client connected");
+		alogf(LOG_INFO, pool->clients[client_pos].ip, pool->clients[client_pos].port, "client connected (active: %d)", pool->active_clients);
 		pthread_cond_signal(&pool->condition);
 		pthread_mutex_unlock(&pool->lock);
 		return (client_pos);

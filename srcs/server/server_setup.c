@@ -7,6 +7,7 @@
 #include "server.h"
 #include "g_table.h"
 #include "commands.h"
+#include "client.h"
 
 t_server_config	*server_config_create(int port, int backlog, int max_clients, int thread_pool_size)
 {
@@ -55,6 +56,11 @@ void	server_worker(t_server_config *config)
 				break ;
 			perror("accept failed");
 			continue ;
+		}
+		if (!running)
+		{
+			close(client_socket);
+			break ;
 		}
 		printf("new connection %s:%d\n", inet_ntoa(client_addr.sin_addr), ntohs(client_addr.sin_port));
 		thread_pool_add_client(config->thread_pool, client_socket, inet_ntoa(client_addr.sin_addr), ntohs(client_addr.sin_port));
@@ -124,10 +130,35 @@ void	server_stop(t_server_config *config)
 {
 	struct sockaddr_in	addr;
 	int					sock;
+	int					timeout;
 
+	timeout = 5;
 	if (!config || !config->running)
 		return ;
 	running = 0;
+	if (config->thread_pool)
+	{
+		pthread_mutex_lock(&config->thread_pool->lock);
+		config->thread_pool->shutdown = 1;
+		pthread_cond_broadcast(&config->thread_pool->condition);
+		pthread_mutex_unlock(&config->thread_pool->lock);
+	}
+	while (timeout > 0 && config->thread_pool && config->thread_pool->active_clients > 0)
+	{
+		sleep(1);
+		timeout--;
+	}
+	if (config->thread_pool)
+	{
+		for (int i = 0; i < config->thread_pool->client_count; i++)
+		{
+			if (config->thread_pool->clients[i].socket > 0)
+			{
+				shutdown(config->thread_pool->clients[i].socket, SHUT_RDWR);
+				close(config->thread_pool->clients[i].socket);
+			}
+		}
+	}
 	memset(&addr, 0, sizeof(addr));
 	addr.sin_family = AF_INET;
 	addr.sin_port = htons(config->port);

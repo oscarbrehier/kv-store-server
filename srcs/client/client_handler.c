@@ -21,7 +21,6 @@ int	handle_input(t_dynamic_buffer *recv_buffer, t_dynamic_buffer *send_buffer, i
 	if (strcmp(input, "quit") == 0)
 	{
 		*client_active = 0;
-		alog(LOG_INFO, client.ip, client.port, "client disconnected");
 		return (1);
 	}
 	parse_input(input, &argc, &argv);
@@ -38,12 +37,15 @@ void serve_client(t_dynamic_buffer *recv_buffer, t_dynamic_buffer *send_buffer, 
 	char	recv_chunk[1024];
 	ssize_t	bytes_read;
 	int		client_active;
+	int		flags;
 
 	client_active = 1;
 	while (client_active && running)
 	{
 		dynamic_buffer_reset(recv_buffer);
 		dynamic_buffer_reset(send_buffer);
+		flags = fcntl(client.socket, F_GETFL, 0);
+		fcntl(client.socket, F_SETFL, flags | O_NONBLOCK);
 		while ((bytes_read = recv(client.socket, recv_chunk, sizeof(recv_chunk) - 1, 0)) > 0)
 		{
 			recv_chunk[bytes_read] = '\0';
@@ -52,7 +54,14 @@ void serve_client(t_dynamic_buffer *recv_buffer, t_dynamic_buffer *send_buffer, 
 				break;
 		}
 		if (bytes_read <= 0)
-		{
+		{	
+			if (errno == EAGAIN || errno == EWOULDBLOCK)
+			{
+				if (!running)
+					break ;
+				usleep(100000);
+				continue ;
+			}
 			client_active = 0;
 			continue;
 		}
@@ -60,11 +69,12 @@ void serve_client(t_dynamic_buffer *recv_buffer, t_dynamic_buffer *send_buffer, 
 		{
 			break ;
 		}
-		if (send_buffer->used > 0)
+		if (send_buffer->used > 0) 
 		{
 			send(client.socket, send_buffer->buffer, send_buffer->used, 0);
 		}
 	}
+	fcntl(client.socket, F_SETFL, flags);
 }
 
 void *client_handler(void *arg)
@@ -74,6 +84,7 @@ void *client_handler(void *arg)
 	t_thread_pool		*pool;
 	t_dynamic_buffer	*recv_buffer;
 	t_dynamic_buffer	*send_buffer;
+	t_client			client;
 
 	pool = (t_thread_pool *)arg;
 	recv_buffer = dynamic_buffer_create(4096);
@@ -99,7 +110,8 @@ void *client_handler(void *arg)
 			pthread_mutex_unlock(&pool->lock);
 			break;
 		}
-		client_socket = pool->clients[0].socket;
+		client = pool->clients[0];
+		client_socket = client.socket;
 		i = 0;
 		while (i < pool->client_count - 1)
 		{
@@ -110,9 +122,16 @@ void *client_handler(void *arg)
 		pthread_mutex_unlock(&pool->lock);
 		if (client_socket > 0)
 		{
-			serve_client(recv_buffer, send_buffer, pool->clients[0]);
+			pthread_mutex_lock(&pool->lock);
+			pool->active_clients++;
+			pthread_mutex_unlock(&pool->lock);
+			serve_client(recv_buffer, send_buffer, client);
+			pthread_mutex_lock(&pool->lock);
+			pool->active_clients--;
+			pthread_mutex_unlock(&pool->lock);
 		}
 		send(client_socket, "Goodbye!\n", strlen("Goodbye!\n"), 0);
+		alogf(LOG_INFO, client.ip, client.port, "client disconnected (active: %d)", pool->active_clients);
 		close(client_socket);
 	}
 	dynamic_buffer_destroy(recv_buffer);

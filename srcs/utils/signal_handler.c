@@ -12,8 +12,8 @@ void	setup_signal(void)
 	struct sigaction	sa;
 	
 	sa.sa_handler = handle_signal;
-	sigemptyset(&sa.sa_mask);
 	sa.sa_flags = 0;
+	sigemptyset(&sa.sa_mask);
 	sigaction(SIGINT, &sa, NULL);
 	sigaction(SIGTERM, &sa, NULL);
 }
