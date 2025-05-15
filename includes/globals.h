@@ -4,7 +4,11 @@
 #include <signal.h>
 #include <pthread.h>
 
-#define MAX_AUTOSAVE_RETRY 1
+#define BASE_PATH "./data/"
+#define KV_STORE_PATH BASE_PATH "bonjour.kvdb"
+#define AUTH_STORE_PATH BASE_PATH "authentication.kvdb"
+
+#define MAX_SAVE_RETRY 1
 #define MAX_EVENTS 64
 #define MAX_BUFFER_SIZE 4096
 #define DEFAULT_THREAD_COUNT 4

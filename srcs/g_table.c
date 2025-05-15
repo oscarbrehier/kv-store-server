@@ -22,6 +22,7 @@ void    *g_table_autosave(void *arg)
 
     (void)arg;
     retry = 0;
+    printf("[OK] autosave\n");
     while (running)
     {
         sleep(10);
@@ -31,12 +32,12 @@ void    *g_table_autosave(void *arg)
 			continue;
 		}
         retry = 0;
-        status = kv_save_file(g_table, "./data/bonjour.kvdb");
-        while (status.code != SUCCESS && retry < MAX_AUTOSAVE_RETRY)
+        status = kv_save_file(g_table, KV_STORE_PATH);
+        while (status.code != SUCCESS && retry < MAX_SAVE_RETRY)
         {
             alog(LOG_ERROR, NULL, 0, "Autosave failed. Retrying");
             fflush(stdout);
-            status = kv_save_file(g_table, "./data/bonjour.kvdb");
+            status = kv_save_file(g_table, KV_STORE_PATH);
             retry++;
         }
         if (status.code == SUCCESS)

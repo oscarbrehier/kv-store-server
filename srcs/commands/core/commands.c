@@ -89,7 +89,7 @@ void    command_exec(t_dynamic_buffer **buffer, int argc, char **argv, t_client 
 		return ;
 	}
 	status = command->handler(buffer, argc, argv);
-	command_logger(client, argc, argv, status);
+	command_logger(client, *command, argc, argv, status);
 	if (status.code == SUCCESS || status.code == WARNING_KEY_EXISTS)
 	{
 		if (command->type == T_WRITE)

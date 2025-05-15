@@ -12,10 +12,10 @@ typedef t_status (*cmd_handler)(t_dynamic_buffer **, int, char **);
 #define T_READ 1
 #define T_WRITE 2
 
-// typedef struct s_arg
-// {
-// 	int	hide;
-// } t_arg;
+typedef struct s_arg
+{
+	int	hide;
+} t_arg;
 
 typedef struct s_command
 {
@@ -25,12 +25,12 @@ typedef struct s_command
 	int			type;
 	int			arg_count;
     cmd_handler handler;
-	// t_arg		*args;
+	t_arg		*args;
 } t_command;
 
 int command_queue(t_command *cmd);
 
-#define DEFINE_COMMAND(handler_fn, name_str, usage_str, desc_str, arg_count_int, type_int) \
+#define DEFINE_COMMAND(handler_fn, name_str, usage_str, desc_str, arg_count_int, type_int, args_list) \
 	static t_command name_str##_cmd = { \
 		.name = #name_str, \
 		.usage = usage_str, \
@@ -38,6 +38,7 @@ int command_queue(t_command *cmd);
 		.handler = handler_fn, \
 		.arg_count = arg_count_int, \
 		.type = type_int, \
+		.args = args_list \
 	}; \
 	__attribute__((constructor)) \
 	static void register_##name_str##_command(void) { \
@@ -49,7 +50,7 @@ void	    command_sys_cleanup(void);
 int	        command_register(t_command *cmd);
 t_command	*command_find(const char *name);
 void        command_exec(t_dynamic_buffer **buffer, int argc, char **argv, t_client client);
-void    	command_logger(t_client client, int argc, char **argv, t_status status);
+void    	command_logger(t_client client, t_command cmd, int argc, char **argv, t_status status);
 
 void    handle_client_input(int socket, char *input);
 void    parse_input(char *input, int *argc, char ***argv);

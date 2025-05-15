@@ -49,7 +49,7 @@ int	main(void)
 		}
 		return (1);
 	}
-	printf("LOG FILE OK\n");
+	printf("[OK] log file\n");
 	if (server_start(config) != 0)
 	{
 		fprintf(stderr, "Server failed to start\n");

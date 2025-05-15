@@ -95,6 +95,8 @@ void    alogf(int log_level, const char *address, uint16_t port, char *message, 
 	int		written;
 	va_list	args;
 
+	if (log_level == LOG_NOLOG)
+		return ;
 	va_start(args, message);
 	message = stringf(message, args);
 	va_end(args);

@@ -39,5 +39,20 @@ t_status handle_set(t_dynamic_buffer **buffer, int argc, char **argv)
     return (status);
 }
 
-DEFINE_COMMAND(handle_get, get, "get <key>", "", 1, T_READ);
-DEFINE_COMMAND(handle_set, set, "set <key> <value>", "", 2, T_WRITE);
+static t_arg	get_args[] = {
+	{
+		.hide = 0
+	}
+};
+
+static t_arg	set_args[] = {
+	{
+		.hide = 0
+	},
+    {
+		.hide = 0
+	}
+};
+
+DEFINE_COMMAND(handle_get, get, "get <key>", "", 1, T_READ, get_args);
+DEFINE_COMMAND(handle_set, set, "set <key> <value>", "", 2, T_WRITE, set_args);
