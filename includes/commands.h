@@ -12,6 +12,11 @@ typedef t_status (*cmd_handler)(t_dynamic_buffer **, int, char **);
 #define T_READ 1
 #define T_WRITE 2
 
+// typedef struct s_arg
+// {
+// 	int	hide;
+// } t_arg;
+
 typedef struct s_command
 {
 	const char  *name;
@@ -20,6 +25,7 @@ typedef struct s_command
 	int			type;
 	int			arg_count;
     cmd_handler handler;
+	// t_arg		*args;
 } t_command;
 
 int command_queue(t_command *cmd);

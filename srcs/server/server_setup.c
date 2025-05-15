@@ -8,6 +8,7 @@
 #include "g_table.h"
 #include "commands.h"
 #include "client.h"
+#include "auth.h"
 
 t_server_config	*server_config_create(int port, int backlog, int max_clients, int thread_pool_size)
 {
@@ -85,9 +86,7 @@ int	server_start(t_server_config *config)
 	if (setsockopt(config->server_socket, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0)
 	{
 		perror("setsockopt failed");
-		close(config->server_socket);
-		config->server_socket = -1;
-		return (-1);
+		goto cleanup;
 	}
 	memset(&server_addr, 0, sizeof(server_addr));
 	server_addr.sin_family = AF_INET,
@@ -96,23 +95,22 @@ int	server_start(t_server_config *config)
 	if (bind(config->server_socket, (struct sockaddr *)&server_addr, sizeof(server_addr)) < 0)
 	{
 		perror("bind failed");
-		close(config->server_socket);
-		config->server_socket = -1;
-		return (-1);
+		goto cleanup;
 	}
 	if (listen(config->server_socket, config->backlog) < 0)
 	{
 		perror("listen failed");
-		close(config->server_socket);
-		config->server_socket = -1;
-		return (-1);
+		goto cleanup;
 	}
 	if (command_sys_init() != 0)
 	{
 		perror("command registration failed");
-		close(config->server_socket);
-		config->server_socket = -1;
-		return (-1);
+		goto cleanup;
+	}
+	if (auth_sys_init() != 0)
+	{
+		perror("auth system startup failure");
+		goto cleanup;
 	}
 	printf("(server) listening on port %d\n", config->port);
 	config->running = 1;
@@ -121,9 +119,15 @@ int	server_start(t_server_config *config)
 	printf("closing server\n");
 	config->running = 0;
 	command_sys_cleanup();
+	auth_sys_cleanup();
 	close(config->server_socket);
 	config->server_socket = -1;
 	return (0);
+
+cleanup:
+	close(config->server_socket);
+	config->server_socket = -1;
+	return (-1);
 }
 
 void	server_stop(t_server_config *config)

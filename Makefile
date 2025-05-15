@@ -20,7 +20,7 @@ OBJS	:= $(patsubst $(SRCDIR)/%.c, $(BUILDDIR)/%.o, $(SRCS))
 all:	${EXEC}
 
 ${EXEC}: ${OBJS}
-	${CC} ${OBJS} -o ${EXEC} ${LDFLAGS}
+	${CC} ${OBJS} -o ${EXEC} ${LDFLAGS} -lssl -lcrypto
 
 $(BUILDDIR)/%.o: $(SRCDIR)/%.c
 	@mkdir -p $(dir $@)

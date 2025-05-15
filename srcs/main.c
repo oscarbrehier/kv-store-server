@@ -4,6 +4,7 @@
 #include "kv_table.h"
 #include "g_table.h"
 #include "logs.h"
+#include "auth.h"
 
 volatile int	 running = 1;
 int				g_log_file = -1;

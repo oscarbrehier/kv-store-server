@@ -65,9 +65,14 @@ void serve_client(t_dynamic_buffer *recv_buffer, t_dynamic_buffer *send_buffer, 
 			client_active = 0;
 			continue;
 		}
-		if (handle_input(recv_buffer, send_buffer, &client_active, client) == 1)
+		if (allow_request(&client))
 		{
-			break ;
+			if (handle_input(recv_buffer, send_buffer, &client_active, client) == 1)
+				break ;
+		}
+		else
+		{
+			dynamic_buffer_append(send_buffer, "rate limit exceeded\n", strlen("rate limit exceeded\n"));
 		}
 		if (send_buffer->used > 0) 
 		{
@@ -111,6 +116,7 @@ void *client_handler(void *arg)
 			break;
 		}
 		client = pool->clients[0];
+		ratelimit_init(&client);
 		client_socket = client.socket;
 		i = 0;
 		while (i < pool->client_count - 1)

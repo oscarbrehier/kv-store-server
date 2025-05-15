@@ -21,5 +21,8 @@
 #include <sys/epoll.h>
 #include <arpa/inet.h>
 #include <time.h>
+#include <openssl/sha.h>
+#include <openssl/rand.h>
+#include <openssl/evp.h>
 
 #endif
