@@ -13,7 +13,7 @@ t_status	handle_user_registration(t_dynamic_buffer **buffer, int argc, char **ar
 	status = auth_register_user(argv[1], argv[2]);
 	if (status.code != SUCCESS)
 	{
-		dynamic_buffer_appendf(buffer, "%s", status_messages[status.code]);
+		dynamic_buffer_appendf(buffer, "%s\n", status_messages[status.code]);
 		return (status);
 	}
 	dynamic_buffer_append(*buffer, "OK\n", strlen("OK\n"));
@@ -28,7 +28,7 @@ t_status	handle_user_login(t_dynamic_buffer **buffer, int argc, char **argv)
 	status = auth_login_user(argv[1], argv[2]);
 	if (status.code != SUCCESS)
 	{
-		dynamic_buffer_appendf(buffer, "%s", status_messages[status.code]);
+		dynamic_buffer_appendf(buffer, "%s\n", status_messages[status.code]);
 		return (status);
 	}
 	dynamic_buffer_append(*buffer, "OK\n", strlen("OK\n"));

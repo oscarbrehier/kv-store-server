@@ -56,12 +56,12 @@ int	command_register(t_command *cmd)
 
 t_command	*command_find(const char *name)
 {
-	void	*command;
+	void		*command;
 	t_status	status;
 
 	if (!command_table || !name)
 		return (NULL);
-	status = kv_get(command_table, name, &command, STRING);
+	status = kv_get(command_table, name, (void **)&command, STRING);
 	if (status.code != SUCCESS)
 		return (NULL);
 	return ((t_command *)command);

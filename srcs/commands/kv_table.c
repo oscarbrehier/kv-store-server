@@ -13,7 +13,7 @@ t_status    handle_get(t_dynamic_buffer **buffer, int argc, char **argv)
 	t_status	status;
     char		*output;
 
-	status = kv_get(g_table, argv[1], (void *)&output, STRING);
+	status = kv_get(g_table, argv[1], (void **)&output, STRING);
     if (status.code == SUCCESS)
 	{
         dynamic_buffer_appendf(buffer, "%s\n", output);
