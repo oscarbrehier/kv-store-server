@@ -13,9 +13,7 @@ int	auth_sys_init(void)
 
 	if (kv_init_table(&auth_store, DEFAULT_AUTH_STORE_SIZE).exit == -1)
 		return (-1);
-	kv_save_file(auth_store, AUTH_STORE_PATH);
 	status = kv_load_file(auth_store, AUTH_STORE_PATH);
-	printf("received error %s\n", status_messages[status.code]);
 	if (status.exit == -1)
 	{
 		if (status.code == ERROR_FILE_OPEN || status.code == ERROR_FILE_HEADER)

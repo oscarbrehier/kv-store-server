@@ -52,7 +52,7 @@ int	        command_sys_init(void);
 void	    command_sys_cleanup(void);
 int	        command_register(t_command *cmd);
 t_command	*command_find(const char *name);
-void        command_exec(t_dynamic_buffer **buffer, int argc, char **argv, t_client client);
+void        command_exec(t_dynamic_buffer **buffer, int argc, char **argv, t_client *client);
 void    	command_logger(t_client client, t_command cmd, int argc, char **argv, t_status status);
 
 void    handle_client_input(int socket, char *input);

@@ -69,6 +69,7 @@ t_command	*command_find(const char *name)
 
 int	check_flags(int flags, t_client client, t_dynamic_buffer **buffer)
 {
+	printf("\nAUTH STATUS %d\n", client.authenticated);
 	if ((flags & AUTH) && client.authenticated != 1)
 	{
 		dynamic_buffer_appendf(buffer, "authenticated required to run this command\n");
@@ -82,7 +83,7 @@ int	check_flags(int flags, t_client client, t_dynamic_buffer **buffer)
 	return (0);
 }
 
-void    command_exec(t_dynamic_buffer **buffer, int argc, char **argv, t_client client)
+void    command_exec(t_dynamic_buffer **buffer, int argc, char **argv, t_client *client)
 { 
 	t_command	*command;
 	t_status	status;
@@ -98,18 +99,18 @@ void    command_exec(t_dynamic_buffer **buffer, int argc, char **argv, t_client 
 		dynamic_buffer_append(*buffer, "(error) unknown command\n", strlen("(error) unknown command\n"));
 		return ;
 	}
-	if (check_flags(command->flags, client, buffer) == -1)
+	if (check_flags(command->flags, *client, buffer) == -1)
 		return ;
 	if ((argc - 1) != command->arg_count)
 	{
 		dynamic_buffer_appendf(buffer, "(usage): %s\n", command->usage);
 		return ;
 	}
-	status = command->handler(buffer, argc, argv, &client);
-	command_logger(client, *command, argc, argv, status);
+	status = command->handler(buffer, argc, argv, client);
+	command_logger(*client, *command, argc, argv, status);
 	if (status.code == SUCCESS || status.code == WARNING_KEY_EXISTS)
 	{
-		printf("auth after login %d\n", client.authenticated);
+		printf("auth after login %d\n", client->authenticated);
 		if (command->flags & T_WRITE)
 			is_dirty++;
 	}

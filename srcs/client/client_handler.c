@@ -15,7 +15,7 @@ void	initialize_client(t_client *client, int socket, const char *ip, uint16_t po
 	client->authenticated = 0;
 }
 
-int	handle_input(t_dynamic_buffer *recv_buffer, t_dynamic_buffer *send_buffer, int *client_active, t_client client)
+int	handle_input(t_dynamic_buffer *recv_buffer, t_dynamic_buffer *send_buffer, int *client_active, t_client *client)
 {
 	char	*input;
 	char	**argv;
@@ -40,7 +40,7 @@ int	handle_input(t_dynamic_buffer *recv_buffer, t_dynamic_buffer *send_buffer, i
 	return (0);
 }
 
-void serve_client(t_dynamic_buffer *recv_buffer, t_dynamic_buffer *send_buffer, t_client client)
+void serve_client(t_dynamic_buffer *recv_buffer, t_dynamic_buffer *send_buffer, t_client *client)
 {
 	char	recv_chunk[1024];
 	ssize_t	bytes_read;
@@ -52,9 +52,9 @@ void serve_client(t_dynamic_buffer *recv_buffer, t_dynamic_buffer *send_buffer, 
 	{
 		dynamic_buffer_reset(recv_buffer);
 		dynamic_buffer_reset(send_buffer);
-		flags = fcntl(client.socket, F_GETFL, 0);
-		fcntl(client.socket, F_SETFL, flags | O_NONBLOCK);
-		while ((bytes_read = recv(client.socket, recv_chunk, sizeof(recv_chunk) - 1, 0)) > 0)
+		flags = fcntl(client->socket, F_GETFL, 0);
+		fcntl(client->socket, F_SETFL, flags | O_NONBLOCK);
+		while ((bytes_read = recv(client->socket, recv_chunk, sizeof(recv_chunk) - 1, 0)) > 0)
 		{
 			recv_chunk[bytes_read] = '\0';
 			dynamic_buffer_append(recv_buffer, recv_chunk, bytes_read);
@@ -73,7 +73,7 @@ void serve_client(t_dynamic_buffer *recv_buffer, t_dynamic_buffer *send_buffer, 
 			client_active = 0;
 			continue;
 		}
-		if (allow_request(&client))
+		if (allow_request(client))
 		{
 			if (handle_input(recv_buffer, send_buffer, &client_active, client) == 1)
 				break ;
@@ -84,10 +84,10 @@ void serve_client(t_dynamic_buffer *recv_buffer, t_dynamic_buffer *send_buffer, 
 		}
 		if (send_buffer->used > 0) 
 		{
-			send(client.socket, send_buffer->buffer, send_buffer->used, 0);
+			send(client->socket, send_buffer->buffer, send_buffer->used, 0);
 		}
 	}
-	fcntl(client.socket, F_SETFL, flags);
+	fcntl(client->socket, F_SETFL, flags);
 }
 
 void *client_handler(void *arg)
@@ -139,7 +139,7 @@ void *client_handler(void *arg)
 			pthread_mutex_lock(&pool->lock);
 			pool->active_clients++;
 			pthread_mutex_unlock(&pool->lock);
-			serve_client(recv_buffer, send_buffer, client);
+			serve_client(recv_buffer, send_buffer, &client);
 			pthread_mutex_lock(&pool->lock);
 			pool->active_clients--;
 			pthread_mutex_unlock(&pool->lock);
