@@ -7,10 +7,13 @@ typedef struct s_status t_status;
 typedef struct s_kv_table t_kv_table;
 typedef struct s_client t_client;
 typedef struct s_dynamic_buffer t_dynamic_buffer;
-typedef t_status (*cmd_handler)(t_dynamic_buffer **, int, char **);
+typedef t_status (*cmd_handler)(t_dynamic_buffer **, int, char **, ...);
 
-#define T_READ 1
-#define T_WRITE 2
+#define NO_FLAG (1 << 0)
+#define T_READ (1 << 1)
+#define T_WRITE (1 << 2)
+#define AUTH (1 << 3)
+#define NO_AUTH (1 << 4)
 
 typedef struct s_arg
 {
@@ -22,7 +25,7 @@ typedef struct s_command
 	const char  *name;
     const char  *usage;
     const char  *description;
-	int			type;
+	int			flags;
 	int			arg_count;
     cmd_handler handler;
 	t_arg		*args;
@@ -30,14 +33,14 @@ typedef struct s_command
 
 int command_queue(t_command *cmd);
 
-#define DEFINE_COMMAND(handler_fn, name_str, usage_str, desc_str, arg_count_int, type_int, args_list) \
+#define DEFINE_COMMAND(handler_fn, name_str, usage_str, desc_str, arg_count_int, flags_int, args_list) \
 	static t_command name_str##_cmd = { \
 		.name = #name_str, \
 		.usage = usage_str, \
 		.description = desc_str, \
 		.handler = handler_fn, \
 		.arg_count = arg_count_int, \
-		.type = type_int, \
+		.flags = flags_int, \
 		.args = args_list \
 	}; \
 	__attribute__((constructor)) \

@@ -96,9 +96,7 @@ int	thread_pool_add_client(t_thread_pool *pool, int client_socket, const char *i
 	if (pool->client_count < pool->max_size * 2)
 	{
 		client_pos = pool->client_count++;
-		pool->clients[client_pos].socket = client_socket;
-		strncpy(pool->clients[client_pos].ip, ip, INET_ADDRSTRLEN);
-		pool->clients[client_pos].port = port;
+		initialize_client(&pool->clients[client_pos], client_socket, ip, port);
 		alogf(LOG_INFO, pool->clients[client_pos].ip, pool->clients[client_pos].port, "client connected (active: %d)", pool->active_clients);
 		pthread_cond_signal(&pool->condition);
 		pthread_mutex_unlock(&pool->lock);

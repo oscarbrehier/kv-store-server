@@ -7,6 +7,14 @@
 #include "commands.h"
 #include "logs.h"
 
+void	initialize_client(t_client *client, int socket, const char *ip, uint16_t port)
+{
+	client->socket = socket;
+	strncpy(client->ip, ip, INET_ADDRSTRLEN);
+	client->port = port;
+	client->authenticated = 0;
+}
+
 int	handle_input(t_dynamic_buffer *recv_buffer, t_dynamic_buffer *send_buffer, int *client_active, t_client client)
 {
 	char	*input;

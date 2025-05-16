@@ -6,7 +6,7 @@
 #include "globals.h"
 #include "status_codes.h"
 
-t_status    handle_get(t_dynamic_buffer **buffer, int argc, char **argv)
+t_status    handle_get(t_dynamic_buffer **buffer, int argc, char **argv, ...)
 {
 	(void)argc;
 	(void)socket;
@@ -23,7 +23,7 @@ t_status    handle_get(t_dynamic_buffer **buffer, int argc, char **argv)
     return (status);
 }
 
-t_status handle_set(t_dynamic_buffer **buffer, int argc, char **argv)
+t_status handle_set(t_dynamic_buffer **buffer, int argc, char **argv, ...)
 {
     (void)argc;
     (void)buffer;
@@ -54,5 +54,5 @@ static t_arg	set_args[] = {
 	}
 };
 
-DEFINE_COMMAND(handle_get, get, "get <key>", "", 1, T_READ, get_args);
-DEFINE_COMMAND(handle_set, set, "set <key> <value>", "", 2, T_WRITE, set_args);
+DEFINE_COMMAND(handle_get, get, "get <key>", "", 1, T_READ | AUTH, get_args);
+DEFINE_COMMAND(handle_set, set, "set <key> <value>", "", 2, T_WRITE | AUTH, set_args);
