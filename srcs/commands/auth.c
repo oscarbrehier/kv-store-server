@@ -48,6 +48,26 @@ t_status	handle_user_login(t_dynamic_buffer **buffer, int argc, char **argv, ...
 	return (status);
 }
 
+t_status	handle_user_logout(t_dynamic_buffer **buffer, int argc, char **argv, ...)
+{
+	(void)argc;
+	(void)argv;
+	t_client	*client;
+	va_list		args;
+
+	va_start(args, argv);
+	client = va_arg(args, t_client *);
+	va_end(args);
+	if (!client)
+	{
+		dynamic_buffer_appendf(buffer, "%s\n", status_messages[AUTH_INTERNAL_ERROR]);
+		return (status_create(-1, AUTH_INTERNAL_ERROR, LOG_ERROR));
+	}
+	client->authenticated = 0;
+	dynamic_buffer_append(*buffer, "OK\n", strlen("OK\n"));
+	return (status_create(0, SUCCESS, LOG_INFO));
+}
+
 static t_arg	credentials_args[] = {
 	{
 		.hide = 0
@@ -59,3 +79,4 @@ static t_arg	credentials_args[] = {
 
 DEFINE_COMMAND(handle_user_registration, register, "register <username> <password>", "", 2, NO_AUTH, credentials_args);
 DEFINE_COMMAND(handle_user_login, login, "login <username> <password>", "", 2, NO_AUTH, credentials_args);
+DEFINE_COMMAND(handle_user_logout, logout, "logout", "", 0, AUTH, NULL);

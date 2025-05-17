@@ -4,9 +4,13 @@
 #include <signal.h>
 #include <pthread.h>
 
-#define BASE_PATH "./data/"
-#define KV_STORE_PATH BASE_PATH "bonjour.kvdb"
-#define AUTH_STORE_PATH BASE_PATH "authentication.kvdb"
+#define CONFIG_BASE_PATH "./config"
+#define CERT_FILE CONFIG_BASE_PATH "server.crt"
+#define KEY_FILE CONFIG_BASE_PATH "server.key"
+
+#define DATA_BASE_PATH "./data/"
+#define KV_STORE_PATH DATA_BASE_PATH "bonjour.kvdb"
+#define AUTH_STORE_PATH DATA_BASE_PATH "authentication.kvdb"
 
 #define MAX_SAVE_RETRY 1
 #define MAX_EVENTS 64

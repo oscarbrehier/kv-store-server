@@ -28,6 +28,6 @@ typedef struct s_thread_pool
 
 t_thread_pool	*thread_pool_create(int size);
 void			thread_pool_destroy(t_thread_pool *pool);
-int				thread_pool_add_client(t_thread_pool *pool, int client_socket, const char *ip, uint16_t port);
+int				thread_pool_add_client(t_thread_pool *pool, int client_socket, const char *ip, uint16_t port, SSL *ssl);
 
 #endif

@@ -21,9 +21,16 @@ int	main(void)
 		fprintf(stderr, "Failed to create server configuration\n");
 		return (1);
 	}
+	if (ssl_ctx_init(config, CERT_FILE, KEY_FILE) != 0)
+	{
+		fprintf(stderr, "Failed to initialize SSL context\n");
+		server_config_destroy(config);
+		return (1);
+	}
 	if (init_global_table() != 0)
 	{
-		fprintf(stderr, "Failed to initialize table\n");
+		fprintf(stderr, "Failed to initialize global table\n");
+		server_config_destroy(config);
 		return (1);
 	}
 	if (pthread_create(&autosave_thread, NULL, g_table_autosave, NULL) != 0)
@@ -34,6 +41,7 @@ int	main(void)
 			kv_free_table(g_table);
 			g_table = NULL;
 		}
+		server_config_destroy(config);
 		return (1);
 	}
 	g_log_file = open(LOG_FILE, O_WRONLY | O_CREAT | O_APPEND, 0644);

@@ -13,6 +13,7 @@ void	initialize_client(t_client *client, int socket, const char *ip, uint16_t po
 	strncpy(client->ip, ip, INET_ADDRSTRLEN);
 	client->port = port;
 	client->authenticated = 0;
+	client->ssl = NULL;
 }
 
 int	handle_input(t_dynamic_buffer *recv_buffer, t_dynamic_buffer *send_buffer, int *client_active, t_client *client)
@@ -54,7 +55,8 @@ void serve_client(t_dynamic_buffer *recv_buffer, t_dynamic_buffer *send_buffer, 
 		dynamic_buffer_reset(send_buffer);
 		flags = fcntl(client->socket, F_GETFL, 0);
 		fcntl(client->socket, F_SETFL, flags | O_NONBLOCK);
-		while ((bytes_read = recv(client->socket, recv_chunk, sizeof(recv_chunk) - 1, 0)) > 0)
+		// while ((bytes_read = recv(client->socket, recv_chunk, sizeof(recv_chunk) - 1, 0)) > 0)
+		while ((bytes_read = SSL_read(client->ssl, recv_chunk, sizeof(recv_chunk) - 1)) > 0)
 		{
 			recv_chunk[bytes_read] = '\0';
 			dynamic_buffer_append(recv_buffer, recv_chunk, bytes_read);
@@ -63,7 +65,9 @@ void serve_client(t_dynamic_buffer *recv_buffer, t_dynamic_buffer *send_buffer, 
 		}
 		if (bytes_read <= 0)
 		{	
-			if (errno == EAGAIN || errno == EWOULDBLOCK)
+			int ssl_error = SSL_get_error(client->ssl, bytes_read);
+			if (ssl_error == SSL_ERROR_WANT_READ || ssl_error == SSL_ERROR_WANT_WRITE)
+			// if (errno == EAGAIN || errno == EWOULDBLOCK)
 			{
 				if (!running)
 					break ;
@@ -84,7 +88,8 @@ void serve_client(t_dynamic_buffer *recv_buffer, t_dynamic_buffer *send_buffer, 
 		}
 		if (send_buffer->used > 0) 
 		{
-			send(client->socket, send_buffer->buffer, send_buffer->used, 0);
+			// send(client->socket, send_buffer->buffer, send_buffer->used, 0);
+			SSL_write(client->ssl, send_buffer->buffer, send_buffer->used);
 		}
 	}
 	fcntl(client->socket, F_SETFL, flags);
@@ -144,8 +149,10 @@ void *client_handler(void *arg)
 			pool->active_clients--;
 			pthread_mutex_unlock(&pool->lock);
 		}
-		send(client_socket, "Goodbye!\n", strlen("Goodbye!\n"), 0);
+		SSL_write(client.ssl, "Goodbye!\n", strlen("Goodbye!\n"));
 		alogf(LOG_INFO, client.ip, client.port, "client disconnected (active: %d)", pool->active_clients);
+		SSL_shutdown(client.ssl);
+		SSL_free(client.ssl);
 		close(client_socket);
 	}
 	dynamic_buffer_destroy(recv_buffer);

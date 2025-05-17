@@ -24,5 +24,7 @@
 #include <openssl/sha.h>
 #include <openssl/rand.h>
 #include <openssl/evp.h>
+#include <openssl/ssl.h>
+#include <openssl/err.h>
 
 #endif

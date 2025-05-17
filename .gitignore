@@ -1,7 +1,10 @@
+README.md
 .vscode
 build
 *.a
 /data
 /todo
-/.logs
 TODO.md
+*.log
+*.crt
+*.key

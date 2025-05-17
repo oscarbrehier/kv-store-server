@@ -69,7 +69,6 @@ t_command	*command_find(const char *name)
 
 int	check_flags(int flags, t_client client, t_dynamic_buffer **buffer)
 {
-	printf("\nAUTH STATUS %d\n", client.authenticated);
 	if ((flags & AUTH) && client.authenticated != 1)
 	{
 		dynamic_buffer_appendf(buffer, "authenticated required to run this command\n");
@@ -110,7 +109,6 @@ void    command_exec(t_dynamic_buffer **buffer, int argc, char **argv, t_client 
 	command_logger(*client, *command, argc, argv, status);
 	if (status.code == SUCCESS || status.code == WARNING_KEY_EXISTS)
 	{
-		printf("auth after login %d\n", client->authenticated);
 		if (command->flags & T_WRITE)
 			is_dirty++;
 	}

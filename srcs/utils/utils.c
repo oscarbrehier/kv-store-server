@@ -83,7 +83,6 @@ char	*stringf(char *format, va_list args)
 					{
 						arg = "(null)";
 					}
-					printf("Processing %%s: arg = %s\n", arg);
 					arg_len = strlen(arg);
 					if (content_len + arg_len >= content_capacity)
 					{

@@ -19,6 +19,7 @@ typedef struct s_client
     uint16_t    	port;
     int             authenticated;
     t_rate_limiter	rate_limiter;
+    SSL             *ssl;
 } t_client;
 
 void	initialize_client(t_client *client, int socket, const char *ip, uint16_t port);
