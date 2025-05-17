@@ -1,7 +1,7 @@
 CC	= gcc
 CFLAGS	= -Wall -Wextra -Werror
 LDFLAGS = -L ../kv-store -lkv
-VFLAGS 	= --leak-check=full --show-leak-kinds=all --track-origins=yes
+VFLAGS 	= --leak-check=full --show-leak-kinds=all --track-origins=yes --log-file="valgrind.dat"
 SRCDIR	= srcs
 INCDIR	= includes
 KV_INCDIR = ../kv-store/includes

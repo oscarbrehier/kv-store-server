@@ -6,7 +6,7 @@
 #include "logs.h"
 #include "auth.h"
 
-volatile int	 running = 1;
+volatile int	running = 1;
 int				g_log_file = -1;
 t_server_config	*config = NULL;
 pthread_mutex_t	log_file_lock = PTHREAD_MUTEX_INITIALIZER;

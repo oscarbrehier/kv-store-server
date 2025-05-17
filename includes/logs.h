@@ -4,7 +4,7 @@
 #include "common.h"
 #include "status_codes.h"
 
-#define LOG_FILE "./.logs/server.log"
+#define LOG_FILE "./logs/server.log"
 
 typedef struct s_client t_client;
 

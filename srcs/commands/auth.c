@@ -70,13 +70,17 @@ t_status	handle_user_logout(t_dynamic_buffer **buffer, int argc, char **argv, ..
 
 static t_arg	credentials_args[] = {
 	{
-		.hide = 0
+		.hide = 0,
+		.min_len = 3,
+		.max_len = 64
 	},
 	{
-		.hide = 1
+		.hide = 1,
+		.min_len = 3,
+		.max_len = 64
 	}
 };
 
-DEFINE_COMMAND(handle_user_registration, register, "register <username> <password>", "", 2, NO_AUTH, credentials_args);
-DEFINE_COMMAND(handle_user_login, login, "login <username> <password>", "", 2, NO_AUTH, credentials_args);
-DEFINE_COMMAND(handle_user_logout, logout, "logout", "", 0, AUTH, NULL);
+DEFINE_COMMAND(handle_user_registration, REGISTER, "REGISTER <username> <password>", "", 2, NO_AUTH, credentials_args);
+DEFINE_COMMAND(handle_user_login, LOGIN, "LOGIN <username> <password>", "", 2, NO_AUTH, credentials_args);
+DEFINE_COMMAND(handle_user_logout, LOGOUT, "LOGOUT", "", 0, AUTH, NULL);

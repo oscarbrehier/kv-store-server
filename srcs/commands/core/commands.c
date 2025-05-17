@@ -67,21 +67,6 @@ t_command	*command_find(const char *name)
 	return ((t_command *)command);
 }
 
-int	check_flags(int flags, t_client client, t_dynamic_buffer **buffer)
-{
-	if ((flags & AUTH) && client.authenticated != 1)
-	{
-		dynamic_buffer_appendf(buffer, "authenticated required to run this command\n");
-		return (-1);
-	}
-	if ((flags & NO_AUTH) && client.authenticated == 1)
-	{
-		dynamic_buffer_appendf(buffer, "client already authenticated\n");
-		return (-1);
-	}
-	return (0);
-}
-
 void    command_exec(t_dynamic_buffer **buffer, int argc, char **argv, t_client *client)
 { 
 	t_command	*command;
@@ -89,20 +74,23 @@ void    command_exec(t_dynamic_buffer **buffer, int argc, char **argv, t_client 
 
 	command = NULL;
 	if (argc < 1 || !argv || !argv[0])
-		return ;
-	command = command_find(argv[0]);
-	if (!running)
-		return;
-	if (!command)
 	{
-		dynamic_buffer_append(*buffer, "(error) unknown command\n", strlen("(error) unknown command\n"));
+		dynamic_buffer_append(*buffer, "failed to execute command\n", strlen("failed to execute command\n"));
 		return ;
 	}
-	if (check_flags(command->flags, *client, buffer) == -1)
-		return ;
-	if ((argc - 1) != command->arg_count)
+	command = command_find(argv[0]);
+	if (!running)
 	{
-		dynamic_buffer_appendf(buffer, "(usage): %s\n", command->usage);
+		dynamic_buffer_append(*buffer, "server shutting down\n", strlen("server shutting down\n"));
+		return;
+	}
+	if (!command)
+	{
+		dynamic_buffer_append(*buffer, "unknown command\n", strlen("unknown command\n"));
+		return ;
+	}
+	if (validate_input(buffer, command, client, argc, argv) == FN_ERROR)
+	{
 		return ;
 	}
 	status = command->handler(buffer, argc, argv, client);

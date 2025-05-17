@@ -32,6 +32,10 @@ void	dynamic_buffer_append(t_dynamic_buffer *buffer, const char *data, size_t le
 	size_t	new_size;
 	char	*new_buffer;
 
+	if (length == (size_t)-1)
+	{
+		length = strlen(data);
+	}
 	if (!buffer || !data)
 		return ;
 	if (buffer->used + length >= buffer->size)

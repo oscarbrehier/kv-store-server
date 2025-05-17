@@ -25,14 +25,19 @@ int	handle_input(t_dynamic_buffer *recv_buffer, t_dynamic_buffer *send_buffer, i
 	input = strtok(recv_buffer->buffer, "\t\r\n");
 	if (!input)
 	{
-		return (0);
+		return (1);
 	}
 	if (strcmp(input, "quit") == 0)
 	{
 		*client_active = 0;
 		return (1);
 	}
-	parse_input(input, &argc, &argv);
+	if (input_parse(input, &argc, &argv, &send_buffer) == FN_ERROR)
+	{
+		if (send_buffer->used > 0)
+			return (1);
+		dynamic_buffer_append(send_buffer, "failed to parse input\n", -1);
+	}
 	command_exec(&send_buffer, argc, argv, client);
 	if (argv)
 	{
@@ -80,7 +85,11 @@ void serve_client(t_dynamic_buffer *recv_buffer, t_dynamic_buffer *send_buffer, 
 		if (allow_request(client))
 		{
 			if (handle_input(recv_buffer, send_buffer, &client_active, client) == 1)
-				break ;
+			{
+				if (send_buffer->used > 0) 
+					SSL_write(client->ssl, send_buffer->buffer, send_buffer->used);
+				continue ;
+			}
 		}
 		else
 		{

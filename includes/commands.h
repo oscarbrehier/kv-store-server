@@ -18,6 +18,8 @@ typedef t_status (*cmd_handler)(t_dynamic_buffer **, int, char **, ...);
 typedef struct s_arg
 {
 	int	hide;
+	int min_len;
+	int	max_len;
 } t_arg;
 
 typedef struct s_command
@@ -55,8 +57,10 @@ t_command	*command_find(const char *name);
 void        command_exec(t_dynamic_buffer **buffer, int argc, char **argv, t_client *client);
 void    	command_logger(t_client client, t_command cmd, int argc, char **argv, t_status status);
 
-void    handle_client_input(int socket, char *input);
-void    parse_input(char *input, int *argc, char ***argv);
-void	free_argv(char **argv);
+int			input_parse(char *input, int *argc, char ***argv, t_dynamic_buffer **buffer);
+int			input_is_valid_char(char c);
+int			validate_input(t_dynamic_buffer **buffer, t_command *command, t_client *client, int argc, char **argv);
+
+void		free_argv(char **argv);
 
 #endif

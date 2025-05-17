@@ -4,7 +4,10 @@
 #include <signal.h>
 #include <pthread.h>
 
-#define CONFIG_BASE_PATH "./config"
+#define FN_ERROR -1
+#define FN_SUCCESS 0
+
+#define CONFIG_BASE_PATH "./config/"
 #define CERT_FILE CONFIG_BASE_PATH "server.crt"
 #define KEY_FILE CONFIG_BASE_PATH "server.key"
 

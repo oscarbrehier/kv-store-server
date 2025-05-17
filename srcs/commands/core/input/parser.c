@@ -1,6 +1,9 @@
+#include "globals.h"
 #include "common.h"
 #include "libs.h"
 #include "client.h"
+#include "commands.h"
+#include "utils/dynamic_buffer.h"
 
 int	resize_argv_if_needed(char ***argv, int *arg_capacity, int arg_count)
 {
@@ -85,8 +88,9 @@ void	copy_args(char *arg, const char *input, int start, int arg_length, int is_q
 	arg[dst_idx] = '\0';
 }
 
-int	handle_argument(char ***argv, int arg_count, char *input, int *i)
+int	handle_argument(char ***argv, int arg_count, char *input, int *i, t_dynamic_buffer **buffer)
 {
+	int		j;
 	int		start_pos;
 	int		arg_length;
 	int		is_quoted;
@@ -108,14 +112,23 @@ int	handle_argument(char ***argv, int arg_count, char *input, int *i)
 	if (!(*argv)[arg_count])
 	{
 		free_argv(*argv);
-		return (1);
+		return (FN_ERROR);
 	}
-
+	j = 0;
+	while (j < arg_length)
+	{
+		if (input_is_valid_char((*argv)[arg_count][j]) == FN_ERROR)
+		{
+			dynamic_buffer_append(*buffer, "input contains invalid characters\n", -1);
+			return (FN_ERROR);
+		}
+		j++;
+	}
 	copy_args((*argv)[arg_count], input, start_pos, arg_length, is_quoted);
-	return (0);
+	return (FN_SUCCESS);
 }
 
-void    parse_input(char *input, int *argc, char ***argv)
+int	input_parse(char *input, int *argc, char ***argv, t_dynamic_buffer **buffer)
 {
     int i;
     int arg_capacity;
@@ -124,7 +137,7 @@ void    parse_input(char *input, int *argc, char ***argv)
     arg_capacity = 3;
     *argv = malloc(sizeof(char *) * (arg_capacity + 1));
     if (!*argv)
-        return ;
+        return (FN_ERROR);
     arg_count = 0;
     i = 0;
     while (input[i])
@@ -136,16 +149,17 @@ void    parse_input(char *input, int *argc, char ***argv)
         if (!resize_argv_if_needed(argv, &arg_capacity, arg_count))
 		{
 			free_argv(*argv);
-			return ;
+			return (FN_ERROR);
 		}
         
-		if (handle_argument(argv, arg_count, input, &i) != 0)
+		if (handle_argument(argv, arg_count, input, &i, buffer) == FN_ERROR)
 		{
 			free_argv(*argv);
-			return ;
+			return (FN_ERROR);
 		}
         arg_count++;
     }
     (*argv)[arg_count] = NULL;
     *argc = arg_count;
+	return (FN_SUCCESS);
 }
