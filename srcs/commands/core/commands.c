@@ -75,7 +75,7 @@ void    command_exec(t_dynamic_buffer **buffer, int argc, char **argv, t_client 
 	command = NULL;
 	if (argc < 1 || !argv || !argv[0])
 	{
-		dynamic_buffer_append(*buffer, "failed to execute command\n", strlen("failed to execute command\n"));
+		dynamic_buffer_append(*buffer, "unknown command\n", strlen("unknown command\n"));
 		return ;
 	}
 	command = command_find(argv[0]);
@@ -89,12 +89,13 @@ void    command_exec(t_dynamic_buffer **buffer, int argc, char **argv, t_client 
 		dynamic_buffer_append(*buffer, "unknown command\n", strlen("unknown command\n"));
 		return ;
 	}
+	command_logger(*client, *command, argc, argv);
 	if (validate_input(buffer, command, client, argc, argv) == FN_ERROR)
 	{
 		return ;
 	}
 	status = command->handler(buffer, argc, argv, client);
-	command_logger(*client, *command, argc, argv, status);
+	alogf(status.log_level, client->ip, client->port, "-> %s", status_messages[status.code]);
 	if (status.code == SUCCESS || status.code == WARNING_KEY_EXISTS)
 	{
 		if (command->flags & T_WRITE)

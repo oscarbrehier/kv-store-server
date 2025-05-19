@@ -1,6 +1,8 @@
 #ifndef COMMANDS_H
 # define COMMANDS_H
 
+#include "globals.h"
+
 #define MAX_COMMANDS 64
 
 typedef struct s_status t_status;
@@ -55,7 +57,7 @@ void	    command_sys_cleanup(void);
 int	        command_register(t_command *cmd);
 t_command	*command_find(const char *name);
 void        command_exec(t_dynamic_buffer **buffer, int argc, char **argv, t_client *client);
-void    	command_logger(t_client client, t_command cmd, int argc, char **argv, t_status status);
+void    	command_logger(t_client client, t_command cmd, int argc, char **argv);
 
 int			input_parse(char *input, int *argc, char ***argv, t_dynamic_buffer **buffer);
 int			input_is_valid_char(char c);

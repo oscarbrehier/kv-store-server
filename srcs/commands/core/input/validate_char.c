@@ -10,7 +10,8 @@ int	input_is_valid_char(char c)
 		(c >= '0' && c <= '9') ||
 		c == '_' ||
 		c == '-' ||
-		c == ':'
+		c == ':' ||
+		c == ' '
 	)
 	{
 		return (FN_SUCCESS);

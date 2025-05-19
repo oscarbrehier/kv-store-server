@@ -6,6 +6,7 @@
 #include "commands.h"
 #include "status_codes.h"
 #include "client.h"
+#include "logs.h"
 
 t_status	handle_user_registration(t_dynamic_buffer **buffer, int argc, char **argv, ...)
 {
@@ -40,10 +41,12 @@ t_status	handle_user_login(t_dynamic_buffer **buffer, int argc, char **argv, ...
 	status = auth_login_user(argv[1], argv[2]);
 	if (status.code != SUCCESS)
 	{
+		alogf(LOG_WARNING, client->ip, client->port, "Failed login for user %s", argv[1]);
 		dynamic_buffer_appendf(buffer, "%s\n", status_messages[status.code]);
 		return (status);
 	}
 	client->authenticated = 1;
+	alogf(LOG_WARNING, client->ip, client->port, "Success login for user %s", argv[1]);
 	dynamic_buffer_append(*buffer, "OK\n", strlen("OK\n"));
 	return (status);
 }

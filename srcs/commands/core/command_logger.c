@@ -68,37 +68,42 @@ char	*format_argv(t_command cmd, int argc, char **argv)
 	return (content);
 }
 
-void    command_logger(t_client client, t_command cmd, int argc, char **argv, t_status status)
+void    command_logger(t_client client, t_command cmd, int argc, char **argv)
 {
-    int		buffer_len;
-	int		written;
-    char	*buffer;
+    // int		buffer_len;
+	// int		written;
+    // char	*buffer;
 	char	*arguments;
 
 	arguments = format_argv(cmd, argc, argv);
-	buffer_len = snprintf(NULL, 0, "%s -> %s", arguments, status_messages[status.code]);
-	if (buffer_len < 0)
+	if (!arguments)
 	{
-		perror("snprintf length calculation failed");
-		free(arguments);
+		fprintf(stderr, "Failed to format arugments\n");
 		return ;
 	}
-	buffer = (char *)malloc(sizeof(char) * (buffer_len + 1));
-	if (!buffer)
-	{
-		fprintf(stderr, "Failed to log command\n");
-		free(arguments);
-		return ;
-	}
-	written = snprintf(buffer, buffer_len + 1, "%s -> %s", arguments, status_messages[status.code]);
-	if (written < 0 || written > buffer_len)
-	{
-		perror("snprintf formatting failed");
-		free(buffer);
-		free(arguments);
-		return ;
-	}
-	alog(status.log_level, client.ip, client.port, buffer);
-	free(buffer);
+	// buffer_len = snprintf(NULL, 0, "%s -> %s", arguments);
+	// if (buffer_len < 0)
+	// {
+	// 	perror("snprintf length calculation failed");
+	// 	free(arguments);
+	// 	return ;
+	// }
+	// buffer = (char *)malloc(sizeof(char) * (buffer_len + 1));
+	// if (!buffer)
+	// {
+	// 	fprintf(stderr, "Failed to log command\n");
+	// 	free(arguments);
+	// 	return ;
+	// }
+	// written = snprintf(buffer, buffer_len + 1, "%s -> %s", arguments);
+	// if (written < 0 || written > buffer_len)
+	// {
+	// 	perror("snprintf formatting failed");
+	// 	free(buffer);
+	// 	free(arguments);
+	// 	return ;
+	// }
+	alogf(LOG_INFO, client.ip, client.port, "Received command: %s");
+	// free(buffer);
 	free(arguments);
 }

@@ -97,7 +97,7 @@ int	thread_pool_add_client(t_thread_pool *pool, int client_socket, const char *i
 		client_pos = pool->client_count++;
 		initialize_client(&pool->clients[client_pos], client_socket, ip, port);
 		pool->clients[client_pos].ssl = ssl;
-		alogf(LOG_INFO, pool->clients[client_pos].ip, pool->clients[client_pos].port, "client connected (active: %d)", pool->active_clients);
+		alogf(LOG_INFO, pool->clients[client_pos].ip, pool->clients[client_pos].port, "Connection established (active: %d)", pool->active_clients);
 		pthread_cond_signal(&pool->condition);
 		pthread_mutex_unlock(&pool->lock);
 		return (client_pos);

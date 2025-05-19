@@ -7,15 +7,24 @@
 
 int	resize_argv_if_needed(char ***argv, int *arg_capacity, int arg_count)
 {
+	int		i;
+	int		old_capacity;
     char	**temp;
             
     if (arg_count > *arg_capacity - 1)
 	{
+		old_capacity = *arg_capacity;
 		*arg_capacity *= 2;
 		temp = realloc(*argv, sizeof(char *) * (*arg_capacity + 1));
 		if (!temp)
 			return (0);
 		*argv = temp;
+		i = old_capacity + 1;
+		while (i <= *arg_capacity)
+		{
+			(*argv)[i] = NULL;
+			i++;
+		}
 	}
     return (1);
 }
@@ -50,8 +59,9 @@ int	process_quoted_arg(char *input, int i, int *arg_length, char quote)
 		(*arg_length)++;
 		i++;
 	}
-	if (input[i] == quote)
-		i++;
+	if (!input[i])
+		return (-1);
+	i++;
 	return (i);
 }
 
@@ -74,7 +84,7 @@ void	copy_args(char *arg, const char *input, int start, int arg_length, int is_q
 	dst_idx = 0;
 	while (dst_idx < arg_length)
 	{
-		if (input[src_idx] == '\\' && input[src_idx+1]) {
+		if (input[src_idx] == '\\' && input[src_idx + 1]) {
 			arg[dst_idx] = input[src_idx+1];
 			src_idx += 2;
 		}
@@ -114,17 +124,19 @@ int	handle_argument(char ***argv, int arg_count, char *input, int *i, t_dynamic_
 		free_argv(*argv);
 		return (FN_ERROR);
 	}
+	copy_args((*argv)[arg_count], input, start_pos, arg_length, is_quoted);
 	j = 0;
 	while (j < arg_length)
 	{
 		if (input_is_valid_char((*argv)[arg_count][j]) == FN_ERROR)
 		{
 			dynamic_buffer_append(*buffer, "input contains invalid characters\n", -1);
+			free((*argv)[arg_count]);
+			(*argv)[arg_count] = NULL;
 			return (FN_ERROR);
 		}
 		j++;
 	}
-	copy_args((*argv)[arg_count], input, start_pos, arg_length, is_quoted);
 	return (FN_SUCCESS);
 }
 
@@ -134,10 +146,18 @@ int	input_parse(char *input, int *argc, char ***argv, t_dynamic_buffer **buffer)
     int arg_capacity;
     int arg_count;
     
-    arg_capacity = 3;
+    arg_capacity = 8;
     *argv = malloc(sizeof(char *) * (arg_capacity + 1));
     if (!*argv)
-        return (FN_ERROR);
+    {
+		return (FN_ERROR);
+	}
+	i = 0;
+	while (i <= arg_capacity)
+	{
+		(*argv)[i] = NULL;
+		i++;
+	}
     arg_count = 0;
     i = 0;
     while (input[i])

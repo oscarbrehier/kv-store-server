@@ -159,7 +159,7 @@ void *client_handler(void *arg)
 			pthread_mutex_unlock(&pool->lock);
 		}
 		SSL_write(client.ssl, "Goodbye!\n", strlen("Goodbye!\n"));
-		alogf(LOG_INFO, client.ip, client.port, "client disconnected (active: %d)", pool->active_clients);
+		alogf(LOG_INFO, client.ip, client.port, "User disconnected (active: %d)", pool->active_clients);
 		SSL_shutdown(client.ssl);
 		SSL_free(client.ssl);
 		close(client_socket);
